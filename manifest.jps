@@ -15,21 +15,25 @@ globals:
 settings:
   fields:
   - type: displayfield
-    markup: "*Cloudlets*"
-  - type: spinner
-    caption: Dynamic 
-    name: dyn_cloudlets
-    min: 0
-    max: 32
-    default: 4
-    increment: 1
-  - type: spinner
-    caption: Reserved 
-    name: res_cloudlets
-    min: 1
-    max: 32
-    default: 2
-    increment: 1
+    markup: "Cloudlets"
+  - type: compositefield
+    caption: Cloudlets 
+    items:
+    - type: spinner
+      #caption: Reserved 
+      name: res_cloudlets
+      min: 1
+      max: 32
+      default: 2
+      increment: 1
+      tooltip: reserved
+    - type: spinner
+      name: dyn_cloudlets
+      min: 0
+      max: 32
+      default: 4
+      increment: 1
+      tooltip: dynamic
   - type: displayfield
     markup: "Gunicorn"
   - type: list
