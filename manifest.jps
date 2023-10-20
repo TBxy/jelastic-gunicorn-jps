@@ -15,7 +15,7 @@ globals:
 settings:
   fields:
   - type: displayfield
-    markup: "## Cloudlets"
+    markup: "*Cloudlets*"
   - type: spinner
     caption: Dynamic 
     name: dyn_cloudlets
@@ -31,7 +31,7 @@ settings:
     default: 2
     increment: 1
   - type: displayfield
-    markup: "## Gunicorn"
+    markup: "Gunicorn"
   - type: list
     name: gunicorn_version
     caption: Gunicorn Version
