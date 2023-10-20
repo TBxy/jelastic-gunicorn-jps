@@ -18,6 +18,7 @@ settings:
     markup: "Cloudlets"
   - type: compositefield
     caption: Cloudlets 
+    defaultPadding: 10
     items:
     - type: spinner
       #caption: Reserved 
@@ -26,14 +27,16 @@ settings:
       max: 32
       default: 2
       increment: 1
-      tooltip: reserved
+    - type: tooltip
+      text: Reserved
     - type: spinner
       name: dyn_cloudlets
       min: 0
       max: 32
       default: 4
       increment: 1
-      tooltip: dynamic
+    - type: tooltip
+      text: Dynamic
   - type: displayfield
     markup: "Gunicorn"
   - type: list
@@ -118,7 +121,9 @@ actions:
         PYTHONBIN=$(dirname $(readlink -f $(which python)))
         ln -s $PYTHONBIN/gunicorn /usr/bin/gunicorn
         ln -s $PYTHONBIN/uvicorn /usr/bin/uvicorn
-        curl -sSf ${baseUrl}/system/gunicorn.service?_r=${fn.random} > /etc/systemd/system/gunicorn.service
+        curl -sS  ${baseUrl}/system/gunicorn.service?_r=${fn.random} > /etc/systemd/system/gunicorn.service
+        curl -sS  ${baseUrl}/system/gunicorn.service?_r=${fn.random} > ${globals.home}/gunicorn.service
+        curl -sSf ${baseUrl}/config/gunicorn_conf.py?_r=${fn.random} > ${globals.gunicorn_conf}
         systemctl daemon-reload
         systemctl enable gunicorn
         sed -i 's\SERVICE="httpd"\SERVICE="gunicorn"\' /var/lib/jelastic/overrides/envinfo.lib
