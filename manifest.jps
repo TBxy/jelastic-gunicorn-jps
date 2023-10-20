@@ -108,13 +108,13 @@ actions:
     - cmd[cp]: |-
         pip install gunicorn==${settings.gunicorn_version}
         pip install uvicorn==${settings.uvicorn_version}
-        curl -sSf ${baseUrl}/config/gunicorn_conf.py > ${globals.gunicorn_conf}
+        curl -sSf ${baseUrl}/config/gunicorn_conf.py?_r=${fn.random} > ${globals.gunicorn_conf}
     - user: root
       cmd[cp]: |-
         PYTHONBIN=$(dirname $(readlink -f $(which python)))
         ln -s $PYTHONBIN/gunicorn /usr/bin/gunicorn
         ln -s $PYTHONBIN/uvicorn /usr/bin/uvicorn
-        curl -sSf ${baseUrl}/system/gunicorn.service > /etc/systemd/system/gunicorn.service
+        curl -sSf ${baseUrl}/system/gunicorn.service?_r=${fn.random} > /etc/systemd/system/gunicorn.service
         systemctl daemon-reload
         systemctl enable gunicorn
         sed -i 's\SERVICE="httpd"\SERVICE="gunicorn"\' /var/lib/jelastic/overrides/envinfo.lib
@@ -134,7 +134,7 @@ actions:
         #pkill gunicorn
   add-example-app:
     - cmd[cp]: |-
-        curl -sSf ${baseUrl}/app/asgi.py > ${globals.webroot}/asgi.py
+        curl -sSf ${baseUrl}/app/asgi.py?_r=${fn.random} > ${globals.webroot}/asgi.py
 
 success: |
   Below you will find your domain name link.  
