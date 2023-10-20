@@ -1,7 +1,7 @@
 type: install
 version: 8.1
 id: gunicorn
-baseUrl: https://raw.githubusercontent.com/TBxy/jelastic-gunicorn-jps/main
+baseUrl: https://raw.githubusercontent.com/TBxy/jelastic-gunicorn-jps/master
 logo: /images/gunicorn.png?_r=${fn.random}
 homepage: http://gunicorn.org
 name: Gunicorn
@@ -14,7 +14,7 @@ globals:
 
 settings:
   fields:
-  - type: text
+  - type: list
     name: gunicorn_version
     caption: Gunicorn Version
     values:
@@ -22,7 +22,7 @@ settings:
       21.0.0: 21.0.0
       20.1.0: 20.1.0
     editable: true
-  - type: text
+  - type: list
     name: uvicorn_version
     caption: Uvicorn Version
     values:

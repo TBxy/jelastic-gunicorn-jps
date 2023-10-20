@@ -3,5 +3,5 @@ Jelasti JPS for python gunicorn server, based in python-apache.
 Manifest url:
 
 ```
-https://raw.githubusercontent.com/TBxy/jelastic-gunicorn-jps/main/manifest.jps
+https://raw.githubusercontent.com/TBxy/jelastic-gunicorn-jps/master/manifest.jps
 ```
