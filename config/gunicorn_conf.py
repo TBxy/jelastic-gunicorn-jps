@@ -62,7 +62,7 @@ log_data = {
     "accesslog": accesslog,
     # Additional, non-gunicorn variables
     #"workers_per_core": workers_per_core,
-    "use_max_workers": use_max_workers,
+    #"use_max_workers": use_max_workers,
     "host": host,
     "port": port,
 }

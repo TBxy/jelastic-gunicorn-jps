@@ -14,11 +14,13 @@ globals:
 
 settings:
   fields:
-  - type: displayfield
-    markup: "Cloudlets"
   - type: compositefield
     caption: Cloudlets 
-    defaultPadding: 10
+    defaultMargins:
+      top: 0
+      right: 10 
+      bottom: 0
+      left: 0
     items:
     - type: spinner
       #caption: Reserved 
@@ -29,6 +31,7 @@ settings:
       increment: 1
     - type: tooltip
       text: Reserved
+      x: -5
     - type: spinner
       name: dyn_cloudlets
       min: 0
@@ -37,8 +40,8 @@ settings:
       increment: 1
     - type: tooltip
       text: Dynamic
+      x: -5
   - type: displayfield
-    markup: "Gunicorn"
   - type: list
     name: gunicorn_version
     caption: Gunicorn Version
@@ -113,22 +116,25 @@ actions:
     path: ${globals.gunicorn_conf}
   install-gunicorn:
     - cmd[cp]: |-
+        pip install --upgrade pip
         pip install gunicorn==${settings.gunicorn_version}
         pip install uvicorn==${settings.uvicorn_version}
         curl -sSf ${baseUrl}/config/gunicorn_conf.py?_r=${fn.random} > ${globals.gunicorn_conf}
     - user: root
       cmd[cp]: |-
+        echo "username ALL=(ALL) ALL" /etc/sudoers
         PYTHONBIN=$(dirname $(readlink -f $(which python)))
         ln -s $PYTHONBIN/gunicorn /usr/bin/gunicorn
         ln -s $PYTHONBIN/uvicorn /usr/bin/uvicorn
         curl -sS  ${baseUrl}/system/gunicorn.service?_r=${fn.random} > /etc/systemd/system/gunicorn.service
-        curl -sS  ${baseUrl}/system/gunicorn.service?_r=${fn.random} > ${globals.home}/gunicorn.service
-        curl -sSf ${baseUrl}/config/gunicorn_conf.py?_r=${fn.random} > ${globals.gunicorn_conf}
+        curl -sS  ${baseUrl}/system/gunicorn.service?_r=${fn.random} > ${globals.home}/gunicorn.serv
+        echo  "${baseUrl}/system/gunicorn.service?_r=${fn.random}" > ${globals.home}/gunicorn.adr
         systemctl daemon-reload
         systemctl enable gunicorn
         sed -i 's\SERVICE="httpd"\SERVICE="gunicorn"\' /var/lib/jelastic/overrides/envinfo.lib
   update-gunicorn:
     - cmd[cp]: |-
+        pip install --upgrade pip
         pip install gunicorn==${GUNICORN_VERSION}
         pip install uvicorn==${UVICORN_VERSION}
         # restart with new binary
