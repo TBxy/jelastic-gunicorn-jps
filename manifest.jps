@@ -10,7 +10,7 @@ globals:
   home: /var/www/webroot
   webroot: /var/www/webroot/ROOT
   password: ${fn.password}
-  gunicorn_conf: /var/www/webroot/gunicorn.conf
+  gunicorn_conf: /var/www/webroot/gunicorn.conf.py
 
 settings:
   fields:
@@ -36,9 +36,9 @@ settings:
     caption: Worker Class
     default: "uvicorn.workers.UvicornWorker"
     values:
-      uvicorn.workers.UvicornWorker: uvicorn
-      sync: sync
-    editable: true
+      uvicorn.workers.UvicornWorker: uvicorn (asgi)
+      sync: sync (wsgi)
+    editable: false
   - type: spinner
     caption: Workers
     name: workers
@@ -60,6 +60,7 @@ onInstall:
       systemctl disable httpd
   - install-gunicorn
   - add-example-app
+  - add-favorites
 
 onBeforeRestartNode:
   - stop-gunicorn
@@ -94,16 +95,24 @@ actions:
         PYTHONBIN=$(dirname $(readlink -f $(which python)))
         ln -s $PYTHONBIN/gunicorn /usr/bin/gunicorn
         ln -s $PYTHONBIN/uvicorn /usr/bin/uvicorn
+        curl -sSf ${baseUrl}/system/gunicorn.service > /etc/systemd/system/gunicorn.service
+        systemctl daemon-reload
+        systemctl enable gunicorn
+        sed -i 's\SERVICE="httpd"\SERVICE="gunicorn"\' /var/lib/jelastic/overrides/envinfo.lib
   update-gunicorn:
     - cmd[cp]: |-
         pip install gunicorn==${GUNICORN_VERSION}
         pip install uvicorn==${UVICORN_VERSION}
+        # restart with new binary
+        systemctl kill -s USR2 gunicorn
   start-gunicorn:
     - cmd[cp]: |-
-        gunicorn --worker-class ${WORKER_CLASS} -c $GUNICORN_CONF $APP_MODULE -D
+        systemctl start gunicorn
+        #gunicorn --worker-class ${WORKER_CLASS} -c $GUNICORN_CONF ROOT.$APP_MODULE -D
   stop-gunicorn:
     - cmd[cp]: |-
-        pkill gunicorn
+        systemctl stop gunicorn
+        #pkill gunicorn
   add-example-app:
     - cmd[cp]: |-
         curl -sSf ${baseUrl}/app/asgi.py > ${globals.webroot}/asgi.py
