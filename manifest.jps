@@ -1,56 +1,92 @@
 type: install
 version: 8.1
 id: gunicorn
-logo: https://raw.githubusercontent.com/TBxy/jelastic-gunicorn-jps/main/images/gunicorn.png
-baseUrl: https://raw.githubusercontent.com/TBxy/jelastic-gunicorn-jps/main/
+baseUrl: https://raw.githubusercontent.com/TBxy/jelastic-gunicorn-jps/main
+logo: /images/gunicorn.png?_r=${fn.random}
 homepage: http://gunicorn.org
 name: Gunicorn
 
 globals:
   webroot: /var/www/webroot/
   password: ${fn.password}
-  GUNICORN_ENVS: /var/www/webroot/gunicorn.evn
+  gunicorn_conf: /var/www/webroot/gunicorn.conf
 
 settings:
   fields:
+  - type: text
+    name: gunicorn_version
+    caption: Gunicorn Version
+    values:
+      21.2.0: 21.2.0
+      21.0.0: 21.0.0
+      20.1.0: 20.1.0
+    editable: true
+  - type: text
+    name: uvicorn_version
+    caption: Uvicorn Version
+    values:
+      0.23.2: 0.23.2
+      0.22.0: 0.22.0
+    editable: true
   - type: list
     name: worker_class
     caption: Worker Class
     values:
-      value1: uvicorn.workers.UvicornWorker
-      value2: sync
-    hideLabel: false
-    hidden: false
-    default: value1
+      uvicorn.workers.UvicornWorker: uvicorn
+      sync: sync
     editable: true
-  - type: numberpicker
-    name: workers
+  - type: slider
     caption: Workers
+    name: workers
     min: 1
     max: 24
-    editable: true
+    increment: 1
+    useTips: true
+    type: slider
 
 nodes:
   nodeType: apache-python
   cloudlets: 4
 
 onInstall:
-  - user: root
-    cmd[cp]: |-
-      pip install gunicorn
-      pip install uvicorn
-      PYTHONBIN=$(dirname $(readlink -f $(which python)))
-      ln -s $PYTHONBIN/gunicorn /usr/bin/gunicorn
-      ln -s $PYTHONBIN/uvicorn /usr/bin/uvicorn
-      export GUNICORN_VERSION=$(pip show gunicorn | grep Version | grep -o "[0-9].*")
-      export UVICORN_VERSION=$(pip show uvicorn | grep Version | grep -o "[0-9].*")
-      echo "WORKER_CLASS=${settings.worker_class}" >> ${globals.GUNICORN_ENVS}
-      echo "WORKERS=${settings.workers}" >> ${globals.GUNICORN_ENVS}
-    # disable not used service (httpd)
+  - adjust-env-vars
   - user: root
     cmd[cp]: |-
       systemctl stop httpd
       systemctl disable httpd
+  - install-gunicorn
+
+onAfterRestartNode:
+  - update-gunicorn
+
+actions:
+  adjust-env-vars:
+    api[cp]: env.control.AddContainerEnvVars
+    vars:
+      GUNICORN_VERSION: ${settings.gunicorn_version}
+      UVICORN_VERSION: ${settings.uvicorn_version}
+      WORKER_CLASS: ${settings.worker_class}
+      WORKERS: ${settings.workers}
+      GUNICORN_CONF: ${globals.gunicorn_conf}
+      PORT: 80
+      APP_MODULE: "app:app"
+  install-gunicorn:
+    - user: root
+      cmd[cp]: |-
+        pip install gunicorn==${settings.gunicorn_version}
+        pip install uvicorn==${settings.uvicorn_version}
+        PYTHONBIN=$(dirname $(readlink -f $(which python)))
+        ln -s $PYTHONBIN/gunicorn /usr/bin/gunicorn
+        ln -s $PYTHONBIN/uvicorn /usr/bin/uvicorn
+        curl {$this.baseUrl}/config/gunicorn_conf.py
+  update-gunicorn:
+    - user: root
+      cmd[cp]: |-
+        pip install gunicorn==${GUNICORN_VERSION}
+        pip install uvicorn==${UVICORN_VERSION}
+  add-example-app:
+    - cmd[cp]: |-
+        curl {$this.baseUrl}/app/asgi.py
 
 success: |
   Below you will find your domain name link.  
