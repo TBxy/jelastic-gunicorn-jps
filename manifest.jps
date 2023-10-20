@@ -44,9 +44,9 @@ settings:
     name: workers
     min: 1
     max: 20
+    default: 4
     increment: 1
     useTips: true
-    type: slider
 
 nodes:
   nodeType: apache-python
@@ -88,7 +88,7 @@ actions:
     - cmd[cp]: |-
         pip install gunicorn==${settings.gunicorn_version}
         pip install uvicorn==${settings.uvicorn_version}
-        curl -sSf ${this.baseUrl}/config/gunicorn_conf.py > ${globals.gunicorn_conf}
+        curl -sSf ${baseUrl}/config/gunicorn_conf.py > ${globals.gunicorn_conf}
     - user: root
       cmd[cp]: |-
         PYTHONBIN=$(dirname $(readlink -f $(which python)))
@@ -106,7 +106,7 @@ actions:
         pkill gunicorn
   add-example-app:
     - cmd[cp]: |-
-        curl -sSf ${this.baseUrl}/app/asgi.py > ${globals.webroot}/asgi.py
+        curl -sSf ${baseUrl}/app/asgi.py > ${globals.webroot}/asgi.py
 
 success: |
   Below you will find your domain name link.  
