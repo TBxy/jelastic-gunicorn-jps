@@ -7,7 +7,8 @@ homepage: http://gunicorn.org
 name: Gunicorn
 
 globals:
-  webroot: /var/www/webroot/
+  home: /var/www/webroot
+  webroot: /var/www/webroot/ROOT
   password: ${fn.password}
   gunicorn_conf: /var/www/webroot/gunicorn.conf
 
@@ -55,9 +56,16 @@ onInstall:
       systemctl stop httpd
       systemctl disable httpd
   - install-gunicorn
+  - add-example-app
 
+onBeforeRestartNode:
+  - stop-gunicorn
 onAfterRestartNode:
   - update-gunicorn
+  - start-gunicorn
+onAfterStart:
+  - update-gunicorn
+  - start-gunicorn
 
 actions:
   adjust-env-vars:
@@ -69,24 +77,30 @@ actions:
       WORKERS: ${settings.workers}
       GUNICORN_CONF: ${globals.gunicorn_conf}
       PORT: 80
-      APP_MODULE: "app:app"
+      APP_MODULE: "asgi:app"
   install-gunicorn:
-    - user: root
-      cmd[cp]: |-
+    - cmd[cp]: |-
         pip install gunicorn==${settings.gunicorn_version}
         pip install uvicorn==${settings.uvicorn_version}
+        curl -sSf {$this.baseUrl}/config/gunicorn_conf.py > ${globals.gunicorn_conf}
+    - user: root
+      cmd[cp]: |-
         PYTHONBIN=$(dirname $(readlink -f $(which python)))
         ln -s $PYTHONBIN/gunicorn /usr/bin/gunicorn
         ln -s $PYTHONBIN/uvicorn /usr/bin/uvicorn
-        curl {$this.baseUrl}/config/gunicorn_conf.py
   update-gunicorn:
-    - user: root
-      cmd[cp]: |-
+    - cmd[cp]: |-
         pip install gunicorn==${GUNICORN_VERSION}
         pip install uvicorn==${UVICORN_VERSION}
+  start-gunicorn:
+    - cmd[cp]: |-
+        gunicorn --worker-class ${WORKER_CLASS} -c $GUNICORN_CONF $APP_MODULE -D
+  stop-gunicorn:
+    - cmd[cp]: |-
+        pkill gunicorn
   add-example-app:
     - cmd[cp]: |-
-        curl {$this.baseUrl}/app/asgi.py
+        curl -sSf {$this.baseUrl}/app/asgi.py > ${globals.webroot}/asgi.py
 
 success: |
   Below you will find your domain name link.  
