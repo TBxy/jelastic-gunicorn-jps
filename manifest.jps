@@ -78,11 +78,14 @@ actions:
       GUNICORN_CONF: ${globals.gunicorn_conf}
       PORT: 80
       APP_MODULE: "asgi:app"
+  add-favorites:
+    api[cp]: env.file.AddFavorite
+    path: ${globals.gunicorn_conf}
   install-gunicorn:
     - cmd[cp]: |-
         pip install gunicorn==${settings.gunicorn_version}
         pip install uvicorn==${settings.uvicorn_version}
-        curl -sSf {$this.baseUrl}/config/gunicorn_conf.py > ${globals.gunicorn_conf}
+        curl -sSf ${this.baseUrl}/config/gunicorn_conf.py > ${globals.gunicorn_conf}
     - user: root
       cmd[cp]: |-
         PYTHONBIN=$(dirname $(readlink -f $(which python)))
@@ -100,7 +103,7 @@ actions:
         pkill gunicorn
   add-example-app:
     - cmd[cp]: |-
-        curl -sSf {$this.baseUrl}/app/asgi.py > ${globals.webroot}/asgi.py
+        curl -sSf ${this.baseUrl}/app/asgi.py > ${globals.webroot}/asgi.py
 
 success: |
   Below you will find your domain name link.  
