@@ -46,11 +46,27 @@ settings:
     max: 20
     default: 4
     increment: 1
-    useTips: true
+  - type: spinner
+    caption: Dynamic Cloudlets
+    name: dyn_cloudlets
+    min: 0
+    max: 32
+    default: 4
+    increment: 1
+  - type: spinner
+    caption: Reserved Cloudlets
+    name: res_cloudlets
+    min: 1
+    max: 32
+    default: 2
+    increment: 1
+
+
 
 nodes:
   nodeType: apache-python
-  cloudlets: 4
+  cloudlets: ${settings.dyn_cloudlets} 
+  fixedCloudlets: ${settings.res_cloudlets} 
 
 onInstall:
   - adjust-env-vars
