@@ -17,6 +17,7 @@ settings:
   - type: list
     name: gunicorn_version
     caption: Gunicorn Version
+    default: 21.2.0
     values:
       21.2.0: 21.2.0
       21.0.0: 21.0.0
@@ -25,6 +26,7 @@ settings:
   - type: list
     name: uvicorn_version
     caption: Uvicorn Version
+    default: 0.23.2
     values:
       0.23.2: 0.23.2
       0.22.0: 0.22.0
@@ -32,15 +34,16 @@ settings:
   - type: list
     name: worker_class
     caption: Worker Class
+    default: "uvicorn.workers.UvicornWorker"
     values:
       uvicorn.workers.UvicornWorker: uvicorn
       sync: sync
     editable: true
-  - type: slider
+  - type: spinner
     caption: Workers
     name: workers
     min: 1
-    max: 24
+    max: 20
     increment: 1
     useTips: true
     type: slider
