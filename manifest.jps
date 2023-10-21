@@ -128,19 +128,26 @@ onInstall:
   - add-favorites
 
 # auto scaling if Worker = 0
-onAfterScaleOut:
+onBeforeSetCloudletCount[cp]:
   - cmd[cp]: |-
-      echo "$(date) - event 'onAfterScaleOut'" >> ${globals.home}/events
-      [[ $(($(ps aux | grep asgi:application -c) - 2 )) -lt 14 && $WORKERS -eq 0 ]] && sudo systemctl kill -s TTIN gunicorn
-      [[ $(($(ps aux | grep asgi:application -c) - 2 )) -lt 14 && $WORKERS -eq 0 ]] && sudo systemctl kill -s TTIN gunicorn
-      [[ $(($(ps aux | grep asgi:application -c) - 2 )) -lt 14 && $WORKERS -eq 0 ]] && sudo systemctl kill -s TTIN gunicorn
-
-onBeforeScaleIn:
-  - cmd[cp]: |-
-      echo "$(date) - event 'onBeforeScaleIn'" >> ${globals.home}/events
-      [[ $(($(ps aux | grep asgi:application -c) - 2 )) -gt 0 && $WORKERS -eq 0 ]] && sudo systemctl kill -s TTOU gunicorn
-      [[ $(($(ps aux | grep asgi:application -c) - 2 )) -gt 0 && $WORKERS -eq 0 ]] && sudo systemctl kill -s TTOU gunicorn
-      [[ $(($(ps aux | grep asgi:application -c) - 2 )) -gt 0 && $WORKERS -eq 0 ]] && sudo systemctl kill -s TTOU gunicorn
+      echo "$(date) - event 'onBeforeSetCloudletCount': res:{$param.fixedCloudlets}, dyn:{$param.dynamicCloudlets}" >> ${globals.home}/events
+      source /etc/sysconfig/gunicorn
+      running=$(($(ps aux | grep $APP_MODULE -c) - 2 ))
+      cpu=$((${param.fixedCloudlets} + ${param.dynamicCloudlets} ))
+      exp_workers=$((cpu*2+1))
+      echo "  current workers: running: $running, exp worker: $exp_workers" >> ${globals.home}/events
+      if [[ $WORKERS -eq 0 ]]; then
+          while [[ $running -gt $exp_workers ]]; do
+            echo "    reduce worker: running: $running, exp worker: $exp_workers" >> ${globals.home}/events
+            sudo systemctl kill -s TTOU gunicorn
+            running=$(($running - 1 ))
+          done
+          while [[ $running -lt $exp_workers ]]; do
+            echo "    increase worker: running: $running, exp worker: $exp_workers" >> ${globals.home}/events
+            sudo systemctl kill -s TTIN gunicorn
+            running=$(($running + 1 ))
+          done
+      fi
 
 #onBeforeRestartNode:
 #  - stop-gunicorn
