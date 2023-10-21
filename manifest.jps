@@ -42,32 +42,49 @@ settings:
       text: Dynamic
       x: -5
   - type: displayfield
-  - type: list
-    name: gunicorn_version
-    caption: Gunicorn Version
-    default: 21.2.0
-    values:
-      21.2.0: 21.2.0
-      21.0.0: 21.0.0
-      20.1.0: 20.1.0
-    editable: true
-  - type: list
-    name: uvicorn_version
-    caption: Uvicorn Version
-    default: 0.23.2
-    values:
-      0.23.2: 0.23.2
-      0.22.0: 0.22.0
-    editable: true
+  - type: compositefield
+    caption: Versions
+    defaultMargins:
+      top: 0
+      right: 10 
+      bottom: 0
+      left: 0
+    items:
+      - type: displayfield
+        markup: "Gunicorn"
+        margins: 0 11 0 0
+      - type: list
+        name: gunicorn_version
+        caption: Gunicorn Version
+        default: 21.2.0
+        values:
+          21.2.0: 21.2.0
+          21.0.0: 21.0.0
+          20.1.0: 20.1.0
+        editable: true
+        width: 100
+      - type: displayfield
+        markup: "Uvicorn"
+        margins: 0 11 0 0
+      - type: list
+        name: uvicorn_version
+        caption: Uvicorn Version
+        default: 0.23.2
+        values:
+          0.23.2: 0.23.2
+          0.22.0: 0.22.0
+        editable: true
+        width: 100
   - type: list
     name: worker_class
     caption: Worker Class
     default: "uvicorn.workers.UvicornWorker"
     values:
-      uvicorn.workers.UvicornWorker: uvicorn (asgi)
-      sync: sync (wsgi)
       gthread: gthread (wsgi)
+      sync: sync (wsgi)
+      uvicorn.workers.UvicornWorker: uvicorn (asgi)
     editable: false
+    width: 200
   - type: spinner
     caption: Workers
     name: workers
@@ -150,15 +167,14 @@ actions:
         WORKER_CLASS: ${settings.worker_class}
         WORKERS: ${settings.workers}
         PRELOAD_APP: ${settings.preload_app}
+        RELOAD_APP: false
         THREADS: 2
         GUNICORN_CONF: ${globals.gunicorn_conf}
         APP_WORKDIR: ${globals.app_workdir}
         PORT: 80
         APP_MODULE: ${this.app_module}
     - api[cp]: env.control.RemoveContainerEnvVars
-      vars:
-        - "WSGI_SCRIPT"
-        - "MOD_WSGI_VERSION"
+      vars: ["WSGI_SCRIPT", "MOD_WSGI_VERSION"]
   #write_gunicorn-envs:
   #  - user: root
   #    cmd[cp]: |-

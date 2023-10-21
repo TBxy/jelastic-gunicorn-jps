@@ -43,10 +43,8 @@ workers = int(os.getenv("WORKERS", "2"))
 if not workers: # auto
     cores = multiprocessing.cpu_count()
     workers = cores*2+1
-threads = None
-if worker_class == "gthread":
-    threads = int(os.getenv("THREADS", "1"))
-preload_app = os.getenv("PRELOAD_APP", "0")).lower() in ["1","y","yes","true","on"]
+preload_app = os.getenv("PRELOAD_APP", "0").lower() in ["1","y","yes","true","on"]
+reload = os.getenv("RELOAD_APP", "0").lower() in ["1","y","yes","true","on"]
 bind = use_bind
 errorlog = use_errorlog
 worker_tmp_dir = "/dev/shm"
@@ -55,6 +53,9 @@ graceful_timeout = int(graceful_timeout_str)
 timeout = int(timeout_str)
 keepalive = int(keepalive_str)
 worker_class = os.getenv("WORKER_CLASS", "2")
+threads = 0
+if worker_class == "gthread":
+    threads = int(os.getenv("THREADS", "2"))
 
 
 # For debugging and testing
@@ -62,6 +63,7 @@ log_data = {
     "loglevel": loglevel,
     "workers": workers,
     "threads": threads,
+    "reload": reload,
     "worker_class": worker_class,
     "bind": bind,
     "graceful_timeout": graceful_timeout,
