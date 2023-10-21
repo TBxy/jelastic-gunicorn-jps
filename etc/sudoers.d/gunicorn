@@ -1,0 +1,2 @@
+Cmnd_Alias GUNICORN_SYSTEMCTL = /usr/bin/systemctl * gunicorn, /usr/bin/systemctl * gunicorn.service
+%ssh-access ALL = NOPASSWD: GUNICORN_SYSTEMCTL
