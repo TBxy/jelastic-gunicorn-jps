@@ -89,6 +89,7 @@ onInstall:
       systemctl stop httpd
       systemctl disable httpd
   - install-gunicorn
+  - start-gunicorn
   - add-example-app
   - add-favorites
 
@@ -128,6 +129,8 @@ actions:
         ln -s $PYTHONBIN/gunicorn /usr/bin/gunicorn
         ln -s $PYTHONBIN/uvicorn /usr/bin/uvicorn
         curl -sS  ${baseUrl}/system/gunicorn.service?_r=${fn.random} > /etc/systemd/system/gunicorn.service
+        mkdir -p /etc/systemd/system/gunicorn.service.d
+        curl -sS  ${baseUrl}/system/gunicorn.service.d/override.conf?_r=${fn.random} > /etc/systemd/system/gunicorn.service.d/override.conf
         chmod 0666 /etc/systemd/system/gunicorn.service
         systemctl daemon-reload
         systemctl enable gunicorn
