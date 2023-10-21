@@ -5,6 +5,7 @@ After=network.target remote-fs.target nss-lookup.target
 
 [Service]
 Type=notify
+#EnvironmentFile=/etc/sysconfig/httpd
 # the specific user that our service will run as
 User=apache
 Group=apache

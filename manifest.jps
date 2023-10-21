@@ -4,7 +4,7 @@ id: gunicorn
 baseUrl: https://raw.githubusercontent.com/TBxy/jelastic-gunicorn-jps/master
 logo: /images/gunicorn.png?_r=${fn.random}
 homepage: http://gunicorn.org
-name: "PythonApp-${fn.random}"
+name: "PythonApp"
 
 globals:
   home: /var/www/webroot
@@ -116,6 +116,7 @@ actions:
   add-favorites:
     api[cp]: env.file.AddFavorite
     path: ${globals.gunicorn_conf}
+    isDir: false
   install-gunicorn:
     - cmd[cp]: |-
         pip install --upgrade pip
@@ -145,11 +146,9 @@ actions:
   start-gunicorn:
     - cmd[cp]: |-
         systemctl start gunicorn
-        #gunicorn --worker-class ${WORKER_CLASS} -c $GUNICORN_CONF ROOT.$APP_MODULE -D
   stop-gunicorn:
     - cmd[cp]: |-
         systemctl stop gunicorn
-        #pkill gunicorn
   add-example-app:
     - cmd[cp]: |-
         curl -sSf ${baseUrl}/app/asgi.py?_r=${fn.random} > ${globals.webroot}/asgi.py
