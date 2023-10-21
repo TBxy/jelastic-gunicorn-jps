@@ -86,7 +86,7 @@ nodes:
   displayName: App Server Gunicorn
 
 onInstall:
-  - if ({$settings.sudo}):
+  - if (settings.sudo):
     - add-sudo-all
   - adjust-env-vars
   - write_gunicorn-envs
@@ -129,7 +129,10 @@ actions:
       WORKERS: ${settings.workers}
       GUNICORN_CONF: ${globals.gunicorn_conf}
       PORT: 80
-      APP_MODULE: "asgi:app"
+      if (settings.workers == 'sync'):
+        APP_MODULE: "wsgi:app"
+      else:
+        APP_MODULE: "asgi:app"
   write_gunicorn-envs:
     - user: root
       cmd[cp]: |-
@@ -203,7 +206,8 @@ actions:
         curl -sSf ${baseUrl}/app/asgi.py?_r=${fn.random} > ${globals.webroot}/asgi.py
   add-sudo-all:
     - log: "add ssh-access to sudoers"
-    - cmd[cp]: |-
+    - user: root
+      cmd[cp]: |-
         #cp /etc/sudoers.d/jelastic ${globals.home}/sudoers.jelastic
         #chmod 0666 ${globals.home}/sudoers.jelastic
         echo "%ssh-access    ALL= NOPASSWD: ALL" >> /etc/sudoers

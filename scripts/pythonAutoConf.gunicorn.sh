@@ -26,6 +26,18 @@ if [ -f /etc/sysconfig/gunicorn ]; then
             echo "APP_MODULE=$APP_MODULE">>/etc/sysconfig/gunicorn
         }
     }
+    grep -qE "\s*WORKERS=$WORKERS" /etc/sysconfig/gunicorn || {
+        sed -i '/\s*WORKERS/d' /etc/sysconfig/gunicorn
+        echo "WORKERS=$WORKERS">>/etc/sysconfig/gunicorn
+    }
+    grep -qE "\s*WORKER_CLASS=$WORKER_CLASS" /etc/sysconfig/gunicorn || {
+        sed -i '/\s*WORKER_CLASS/d' /etc/sysconfig/gunicorn
+        echo "WORKER_CLASS=$WORKER_CLASS">>/etc/sysconfig/gunicorn
+    }
+    grep -qE "\s*PORT=$PORT" /etc/sysconfig/gunicorn || {
+        sed -i '/\s*PORT/d' /etc/sysconfig/gunicorn
+        echo "PORT=$PORT">>/etc/sysconfig/gunicorn
+    }
     . /etc/sysconfig/gunicorn
 fi
 
