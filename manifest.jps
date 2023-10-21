@@ -10,8 +10,7 @@ globals:
   home: /var/www/webroot
   webroot: /var/www/webroot/ROOT
   password: ${fn.password}
-  gunicorn_conf: /var/www/webroot/gunicorn.conf.py
-
+  gunicorn_conf: /etc/gunicorn/conf/gunicorn.conf.py
 settings:
   fields:
   - type: compositefield
@@ -89,7 +88,7 @@ onInstall:
       chmod 0666 ${globals.home}/sudoers
       cp /etc/sudoers.d/jelastic ${globals.home}/sudoers.jelastic
       chmod 0666 ${globals.home}/sudoers.jelastic
-      echo "ssh-access    ALL=(ALL)ALL" >> /etc/sudoers
+      echo "%ssh-access    ALL=(ALL)ALL" >> /etc/sudoers
   - adjust-env-vars
   - write_gunicorn-envs
   - add-example-app
@@ -101,12 +100,23 @@ onInstall:
   - start-gunicorn
   - add-favorites
 
-onBeforeRestartNode:
-  - stop-gunicorn
-onAfterRestartNode:
+#onBeforeRestartNode:
+#  - stop-gunicorn
+onAfterRestartNode[cp]:
+  - echo "Restart  'onAfterRestartNode' $(date)" >> ${globals.home}/restarts
+  - write_gunicorn-envs
   - update-gunicorn
-  - start-gunicorn
-onAfterStart:
+onAfterRestartContainer[cp]:
+  - echo "Restart  'onAfterRestartContainer' $(date)" >> ${globals.home}/restarts
+  - write_gunicorn-envs
+  - update-gunicorn
+onAfterStart[cp]:
+  - echo "Restart  'onAfterStart' $(date)" >> ${globals.home}/restarts
+  - write_gunicorn-envs
+  - update-gunicorn
+onAfterSetEnvVar[cp]:
+  - echo "Restart  'onAfterSetEnvVar' $(date)" >> ${globals.home}/restarts
+  - write_gunicorn-envs
   - update-gunicorn
   - start-gunicorn
 
@@ -125,6 +135,9 @@ actions:
     - user: root
       cmd[cp]: |-
         source /.jelenv
+        echo "updated vars from /.jelenv $(date)" > ${globals.home}/vars.updated
+        cat /.jelenv >> ${globals.home}/vars.updated
+        echo "WORKERS=$WORKERS" >> ${globals.home}/vars.updated
         echo "WORKERS=$WORKERS" > /etc/sysconfig/gunicorn.conf
         echo "WORKER_CLASS=$WORKER_CLASS" >> /etc/sysconfig/gunicorn.conf
         echo "PORT=$PORT" >> /etc/sysconfig/gunicorn.conf
@@ -134,12 +147,18 @@ actions:
     api[cp]: env.file.AddFavorite
     path: ${globals.gunicorn_conf}
     isDir: false
+    api[cp]: env.file.AddFavorite
+    path: /var/log/gunicorn
   install-gunicorn:
     - cmd[cp]: |-
         pip install --upgrade pip
         pip install gunicorn==${settings.gunicorn_version}
         pip install uvicorn==${settings.uvicorn_version}
-        curl -sSf ${baseUrl}/config/gunicorn_conf.py?_r=${fn.random} > ${globals.gunicorn_conf}
+    - user: root
+      cmd[cp]: |-
+        mkdir -p $(dirname ${globals.gunicorn_conf})
+        curl -sSf ${baseUrl}/etc/gunicorn/conf/gunicorn.conf.py?_r=${fn.random} > ${globals.gunicorn_conf}
+        /usr/bin/setfacl -m g:ssh-access:wr  ${globals.gunicorn_conf} >&/dev/null;
     - write_gunicorn-envs
     - user: root
       cmd[cp]: |-
@@ -152,6 +171,9 @@ actions:
         chmod 0666 /etc/systemd/system/gunicorn.service
         curl -sS  ${baseUrl}/etc/sudoers.d/gunicorn?_r=${fn.random} > /etc/sudoers.d/gunicorn
         chmod 0444 /etc/sudoers.d/gunicorn
+        mkdir -p /var/log/gunicorn
+        cp  /usr/local/sbin/pythonAutoConf /usr/local/sbin/pythonAutoConf.httpd.sh
+        curl -sS  ${baseUrl}/scripts/pythonAutoConf.gunicorn.sh?_r=${fn.random} > /usr/local/sbin/pythonAutoConf.gunicorn.sh
         systemctl daemon-reload
         systemctl enable gunicorn
         sed -i 's\SERVICE="httpd"\SERVICE="gunicorn"\' /var/lib/jelastic/overrides/envinfo.lib
