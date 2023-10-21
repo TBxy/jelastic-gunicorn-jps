@@ -96,7 +96,7 @@ settings:
   - type: toggle
     caption: "Preload App"
     name: preload_app
-    default: true
+    default: false
     tooltip: "Preloads app for workers, reduces memory but restart is needed instead of reload"
   - type: displayfield
   - type: toggle
@@ -122,6 +122,7 @@ onInstall:
     cmd[cp]: |-
       systemctl stop httpd
       systemctl disable httpd
+  - install-poetry
   - install-gunicorn
   - start-gunicorn
   - add-favorites
@@ -167,7 +168,7 @@ actions:
         UVICORN_VERSION: ${settings.uvicorn_version}
         WORKER_CLASS: ${settings.worker_class}
         WORKERS: ${settings.workers}
-        PRELOAD_APP: ${settings.preload_app}
+        RELOAD_APP: ${settings.preload_app}
         RELOAD_APP: false
         THREADS: 2
         GUNICORN_CONF: ${globals.gunicorn_conf}
@@ -200,8 +201,10 @@ actions:
         pip install --upgrade pip
         pip install gunicorn==${settings.gunicorn_version}
         pip install uvicorn==${settings.uvicorn_version}
-        pip install python-dotenv # used by gunicorn.conf.py
-        pip install pyinfo        # used by example deployement
+        # used by gunicorn.conf.py
+        pip install python-dotenv
+        # used by example deployement
+        pip install pyinfo
     - user: root
       cmd[cp]: |-
         mkdir -p $(dirname ${globals.gunicorn_conf})
@@ -227,6 +230,13 @@ actions:
         systemctl daemon-reload
         sed -i 's\SERVICE="httpd"\SERVICE="gunicorn"\' /var/lib/jelastic/overrides/envinfo.lib
         systemctl enable gunicorn
+  install-poetry:
+    - user: root
+      cmd[cp]: |-
+        python -m venv /opt/poetry
+        /opt/poetry/bin/pip install -U pip setuptools
+        /opt/poetry/bin/pip install poetry
+        ln -s /opt/poetry/bin/poetry /usr/bin/poetry
   update-gunicorn:
     - log: "update gunicorn"
     - cmd[cp]: |-
