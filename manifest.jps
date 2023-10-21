@@ -138,11 +138,11 @@ actions:
         echo "updated vars from /.jelenv $(date)" > ${globals.home}/vars.updated
         cat /.jelenv >> ${globals.home}/vars.updated
         echo "WORKERS=$WORKERS" >> ${globals.home}/vars.updated
-        echo "WORKERS=$WORKERS" > /etc/sysconfig/gunicorn.conf
-        echo "WORKER_CLASS=$WORKER_CLASS" >> /etc/sysconfig/gunicorn.conf
-        echo "PORT=$PORT" >> /etc/sysconfig/gunicorn.conf
-        echo "APP_MODULE=$APP_MODULE" >> /etc/sysconfig/gunicorn.conf
-        echo "GUNICORN_CONF=$GUNICORN_CONF" >> /etc/sysconfig/gunicorn.conf
+        echo "WORKERS=$WORKERS" > /etc/sysconfig/gunicorn
+        echo "WORKER_CLASS=$WORKER_CLASS" >> /etc/sysconfig/gunicorn
+        echo "PORT=$PORT" >> /etc/sysconfig/gunicorn
+        echo "APP_MODULE=$APP_MODULE" >> /etc/sysconfig/gunicorn
+        echo "GUNICORN_CONF=$GUNICORN_CONF" >> /etc/sysconfig/gunicorn
   add-favorites:
     api[cp]: env.file.AddFavorite
     path: ${globals.gunicorn_conf}
