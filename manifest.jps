@@ -113,6 +113,13 @@ actions:
       GUNICORN_CONF: ${globals.gunicorn_conf}
       PORT: 80
       APP_MODULE: "asgi:app"
+  write_gunicorn-envs:
+    - user: root
+      cmd[cp]: |-
+        echo "WORKERS=$WORKERS" > /etc/httpd/conf/httpd.conf
+        echo "WORKER_CLASS=$WORKER_CLASS" >> /etc/httpd/conf/httpd.conf
+        echo "PORT=$PORT" >> /etc/httpd/conf/httpd.conf
+        echo "APP_MODULE=$APP_MODULE" >> /etc/httpd/conf/httpd.conf
   add-favorites:
     api[cp]: env.file.AddFavorite
     path: ${globals.gunicorn_conf}
@@ -123,6 +130,7 @@ actions:
         pip install gunicorn==${settings.gunicorn_version}
         pip install uvicorn==${settings.uvicorn_version}
         curl -sSf ${baseUrl}/config/gunicorn_conf.py?_r=${fn.random} > ${globals.gunicorn_conf}
+    - write_gunicorn-envs
     - user: root
       cmd[cp]: |-
         echo "username ALL=(ALL) ALL" /etc/sudoers
@@ -142,12 +150,14 @@ actions:
         pip install gunicorn==${GUNICORN_VERSION}
         pip install uvicorn==${UVICORN_VERSION}
         # restart with new binary
-        systemctl kill -s USR2 gunicorn
+        sudo systemctl kill -s USR2 gunicorn
   start-gunicorn:
-    - cmd[cp]: |-
+    - user: root
+      cmd[cp]: |-
         systemctl start gunicorn
   stop-gunicorn:
-    - cmd[cp]: |-
+    - user: root
+      cmd[cp]: |-
         systemctl stop gunicorn
   add-example-app:
     - cmd[cp]: |-
