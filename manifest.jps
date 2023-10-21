@@ -73,6 +73,10 @@ settings:
     max: 20
     default: 4
     increment: 1
+  - type: toggle
+    caption: sudo access
+    name: sudo
+    default: true
   
 
 nodes:
@@ -82,13 +86,8 @@ nodes:
   displayName: App Server Gunicorn
 
 onInstall:
-  - user: root
-    cmd[cp]: |-
-      cp /etc/sudoers ${globals.home}/sudoers
-      chmod 0666 ${globals.home}/sudoers
-      cp /etc/sudoers.d/jelastic ${globals.home}/sudoers.jelastic
-      chmod 0666 ${globals.home}/sudoers.jelastic
-      echo "%ssh-access    ALL= NOPASSWD: ALL" >> /etc/sudoers
+  - if ({$settings.sudo}):
+    - add-sudo-all
   - adjust-env-vars
   - write_gunicorn-envs
   - add-example-app
@@ -150,6 +149,7 @@ actions:
     api[cp]: env.file.AddFavorite
     path: /var/log/gunicorn
   install-gunicorn:
+    - log: "install gunicorn"
     - cmd[cp]: |-
         pip install --upgrade pip
         pip install gunicorn==${settings.gunicorn_version}
@@ -168,16 +168,18 @@ actions:
         curl -sS  ${baseUrl}/etc/system/gunicorn.service?_r=${fn.random} > /etc/systemd/system/gunicorn.service
         mkdir -p /etc/systemd/system/gunicorn.service.d
         curl -sS  ${baseUrl}/etc/system/gunicorn.service.d/override.conf?_r=${fn.random} > /etc/systemd/system/gunicorn.service.d/override.conf
-        chmod 0666 /etc/systemd/system/gunicorn.service
         curl -sS  ${baseUrl}/etc/sudoers.d/gunicorn?_r=${fn.random} > /etc/sudoers.d/gunicorn
-        chmod 0444 /etc/sudoers.d/gunicorn
+        chmod 0440 /etc/sudoers.d/gunicorn
         mkdir -p /var/log/gunicorn
+        # update pythonAutoConf script
         cp  /usr/local/sbin/pythonAutoConf /usr/local/sbin/pythonAutoConf.httpd.sh
         curl -sS  ${baseUrl}/scripts/pythonAutoConf.gunicorn.sh?_r=${fn.random} > /usr/local/sbin/pythonAutoConf.gunicorn.sh
+        chmod +x /usr/local/sbin/pythonAutoConf.gunicorn.sh
         systemctl daemon-reload
         systemctl enable gunicorn
         sed -i 's\SERVICE="httpd"\SERVICE="gunicorn"\' /var/lib/jelastic/overrides/envinfo.lib
   update-gunicorn:
+    - log: "update gunicorn"
     - cmd[cp]: |-
         pip install --upgrade pip
         pip install gunicorn==${GUNICORN_VERSION}
@@ -187,16 +189,24 @@ actions:
       cmd[cp]: |-
         systemctl kill -s USR2 gunicorn
   start-gunicorn:
+    - log: "start gunicorn"
     - user: root
       cmd[cp]: |-
         systemctl start gunicorn
   stop-gunicorn:
+    - log: "stop gunicorn"
     - user: root
       cmd[cp]: |-
         systemctl stop gunicorn
   add-example-app:
     - cmd[cp]: |-
         curl -sSf ${baseUrl}/app/asgi.py?_r=${fn.random} > ${globals.webroot}/asgi.py
+  add-sudo-all:
+    - log: "add ssh-access to sudoers"
+    - cmd[cp]: |-
+        #cp /etc/sudoers.d/jelastic ${globals.home}/sudoers.jelastic
+        #chmod 0666 ${globals.home}/sudoers.jelastic
+        echo "%ssh-access    ALL= NOPASSWD: ALL" >> /etc/sudoers
 
 success: |
   Below you will find your domain name link.  
