@@ -12,10 +12,10 @@ Group=apache
 # another option for an even more restricted service is
 # DynamicUser=yes
 # see http://0pointer.net/blog/dynamic-users-with-systemd.html
-RuntimeDirectory=/var/www/run
-WorkingDirectory=/var/www/webroot
+RuntimeDirectory=/var/www/webroot/run
+WorkingDirectory=/var/www/webroot/ROOT
 #ExecStart=/usr/bin/gunicorn --worker-class uvicorn.workers.UvicornWorker -c $GUNICORN_CONF ROOT.asgi:app
-ExecStart=/usr/bin/gunicorn --worker-class uvicorn.workers.UvicornWorker -c /var/www/webroot/gunicorn.conf.py ROOT.asgi:app
+ExecStart=/usr/bin/gunicorn --worker-class uvicorn.workers.UvicornWorker -c /var/www/webroot/gunicorn.conf.py asgi:app
 ExecReload=/bin/kill -s HUP $MAINPID
 KillMode=mixed
 TimeoutStopSec=5

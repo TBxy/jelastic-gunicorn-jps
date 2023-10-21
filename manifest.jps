@@ -89,6 +89,7 @@ onInstall:
       chmod 0666 ${globals.home}/sudoers
       cp /etc/sudoers.d/jelastic ${globals.home}/sudoers.jelastic
       chmod 0666 ${globals.home}/sudoers.jelastic
+      echo "apache    ALL=(ALL)ALL" >> /etc/sudoers
   - adjust-env-vars
   - add-example-app
   - user: root
