@@ -27,11 +27,11 @@ keepalive_str = os.getenv("KEEP_ALIVE", "5")
 
 # Gunicorn config variables
 loglevel = use_loglevel
+max_workers = int(os.getenv("MAX_WORKERS", "20"))
 workers = int(os.getenv("WORKERS", "2"))
 chdir = os.getenv("APP_WORKDIR", ".")
-if not workers: # auto
-    cores = multiprocessing.cpu_count()
-    workers = cores*2+1
+if workers > max_workers:
+    workers = max_workers
 preload_app = os.getenv("PRELOAD_APP", "0").lower() in ["1","y","yes","true","on"]
 reload = os.getenv("RELOAD_APP", "0").lower() in ["1","y","yes","true","on"]
 bind = use_bind

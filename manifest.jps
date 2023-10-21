@@ -10,7 +10,6 @@ globals:
   home: /var/www/webroot
   webroot: /var/www/webroot
   app_workdir: /var/www/webroot/ROOT
-  password: ${fn.password}
   gunicorn_conf: /etc/gunicorn/conf/gunicorn.conf.py
 settings:
   fields:
@@ -29,6 +28,7 @@ settings:
       max: 32
       default: 1
       increment: 1
+      width: 75
     - type: tooltip
       text: Reserved
       x: -5
@@ -38,6 +38,7 @@ settings:
       max: 32
       default: 4
       increment: 1
+      width: 75
     - type: tooltip
       text: Dynamic
       x: -5
@@ -52,7 +53,7 @@ settings:
     items:
       - type: displayfield
         markup: "Gunicorn"
-        margins: 0 11 0 0
+        margins: 5 11 0 0
       - type: list
         name: gunicorn_version
         caption: Gunicorn Version
@@ -65,7 +66,7 @@ settings:
         width: 100
       - type: displayfield
         markup: "Uvicorn"
-        margins: 0 11 0 0
+        margins: 5 11 0 0
       - type: list
         name: uvicorn_version
         caption: Uvicorn Version
@@ -85,14 +86,46 @@ settings:
       uvicorn.workers.UvicornWorker: uvicorn (asgi)
     editable: false
     width: 200
-  - type: spinner
+  - type: compositefield
     caption: Workers
-    name: workers
-    min: 0
-    max: 20
-    default: 0
-    increment: 1
-    tooltip: "If set to '0' it scales automatically based on this formula '2*cloudlets+1'."
+    defaultMargins:
+      top: 0
+      right: 5 
+      bottom: 0
+      left: 0
+    items:
+      - type: spinner
+        caption: Workers
+        name: workers
+        min: 1
+        max: 20
+        default: 3
+        increment: 1
+        width: 75
+      - type: tooltip
+        text: "Number of workers, if set to 'auto' this is the start value."
+        x: -5
+      - type: displayfield
+        markup: "Max"
+        margins: 5 11 0 0
+      - type: spinner
+        caption: Workers
+        name: max_workers
+        min: 1
+        max: 20
+        default: 12
+        width: 75
+      - type: tooltip
+        text: "Maximum number of workers in case of auto-scaling."
+        x: -5
+      - type: displayfield
+        markup: "Auto Scaling"
+        margins: 5 11 0 20
+      - type: toggle
+        hideLable: false
+        caption: "Auto Scaling"
+        name: auto_worker
+        default: false
   - type: toggle
     caption: "Preload App"
     name: preload_app
@@ -126,17 +159,17 @@ onInstall:
   - install-gunicorn
   - start-gunicorn
   - add-favorites
+  - install-extras
 
-# auto scaling if Worker = 0
-onBeforeSetCloudletCount[cp]:
+# auto scaling if AUTO_WORKERS
+onBeforeSetCloudletCount:
   - cmd[cp]: |-
       echo "$(date) - event 'onBeforeSetCloudletCount': res:{$param.fixedCloudlets}, dyn:{$param.dynamicCloudlets}" >> ${globals.home}/events
       source /etc/sysconfig/gunicorn
       running=$(($(ps aux | grep $APP_MODULE -c) - 2 ))
-      cpu=$((${param.fixedCloudlets} + ${param.dynamicCloudlets} ))
-      exp_workers=$((cpu*2+1))
+      exp_workers=$(($WORKERS + ${param.dynamicCloudlets} * $ADD_AUTO_WORKERS))
       echo "  current workers: running: $running, exp worker: $exp_workers" >> ${globals.home}/events
-      if [[ $WORKERS -eq 0 ]]; then
+      if [[ $AUTO_WORKERS -eq 1 ]]; then
           while [[ $running -gt $exp_workers ]]; do
             echo "    reduce worker: running: $running, exp worker: $exp_workers" >> ${globals.home}/events
             sudo systemctl kill -s TTOU gunicorn
@@ -148,6 +181,10 @@ onBeforeSetCloudletCount[cp]:
             running=$(($running + 1 ))
           done
       fi
+
+onAfterSetCloudletCount:
+  - cmd[cp]: |-
+      echo "$(date) - event 'onAfterSetCloudletCount': res:{$param.fixedCloudlets}, dyn:{$param.dynamicCloudlets}" >> ${globals.home}/events
 
 #onBeforeRestartNode:
 #  - stop-gunicorn
@@ -190,6 +227,9 @@ actions:
         UVICORN_VERSION: ${settings.uvicorn_version}
         WORKER_CLASS: ${settings.worker_class}
         WORKERS: ${settings.workers}
+        MAX_WORKERS: ${settings.max_workers}
+        AUTO_WORKERS: ${settings.auto_workers ? '1' : '0'}
+        ADD_AUTO_WORKERS: 2
         RELOAD_APP: ${settings.preload_app}
         RELOAD_APP: false
         THREADS: 2
@@ -212,11 +252,16 @@ actions:
   #      echo "APP_MODULE=$APP_MODULE" >> /etc/sysconfig/gunicorn
   #      echo "GUNICORN_CONF=$GUNICORN_CONF" >> /etc/sysconfig/gunicorn
   add-favorites:
-    api[cp]: env.file.AddFavorite
-    path: ${globals.gunicorn_conf}
-    isDir: false
-    api[cp]: env.file.AddFavorite
-    path: /var/log/gunicorn
+    - api[cp]: env.file.AddFavorite
+      path: ${globals.gunicorn_conf}
+      isDir: false
+    - api[cp]: env.file.AddFavorite
+      path: /var/log/gunicorn
+  install-extras:
+    - log: "install extra usful packages"
+    - user: root
+      cmd[cp]: |-
+        yum install -y stress htop
   install-gunicorn:
     - log: "install gunicorn"
     - cmd[cp]: |-
