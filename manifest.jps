@@ -89,7 +89,7 @@ onInstall:
       chmod 0666 ${globals.home}/sudoers
       cp /etc/sudoers.d/jelastic ${globals.home}/sudoers.jelastic
       chmod 0666 ${globals.home}/sudoers.jelastic
-      echo "apache    ALL=(ALL)ALL" >> /etc/sudoers
+      echo "ssh-access    ALL=(ALL)ALL" >> /etc/sudoers
   - adjust-env-vars
   - write_gunicorn-envs
   - add-example-app
@@ -124,9 +124,6 @@ actions:
   write_gunicorn-envs:
     - user: root
       cmd[cp]: |-
-        cp /etc/sudoers.d/httpd ${globals.home}/sudoers.httpd
-        chmod 0666 ${globals.home}/sudoers.httpd
-        chmod -R 0666 /etc/sudoers.d/httpd 
         source /.jelenv
         echo "WORKERS=$WORKERS" > /etc/sysconfig/gunicorn.conf
         echo "WORKER_CLASS=$WORKER_CLASS" >> /etc/sysconfig/gunicorn.conf
