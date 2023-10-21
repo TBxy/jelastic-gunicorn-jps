@@ -127,29 +127,44 @@ onInstall:
   - start-gunicorn
   - add-favorites
 
+# auto scaling if Worker = 0
+onAfterScaleOut:
+  - cmd[cp]: |-
+      echo "$(date) - event 'onAfterScaleOut'" >> ${globals.home}/events
+      [[ $(($(ps aux | grep asgi:application -c) - 2 )) -lt 14 && $WORKERS -eq 0 ]] && sudo systemctl kill -s TTIN gunicorn
+      [[ $(($(ps aux | grep asgi:application -c) - 2 )) -lt 14 && $WORKERS -eq 0 ]] && sudo systemctl kill -s TTIN gunicorn
+      [[ $(($(ps aux | grep asgi:application -c) - 2 )) -lt 14 && $WORKERS -eq 0 ]] && sudo systemctl kill -s TTIN gunicorn
+
+onBeforeScaleIn:
+  - cmd[cp]: |-
+      echo "$(date) - event 'onBeforeScaleIn'" >> ${globals.home}/events
+      [[ $(($(ps aux | grep asgi:application -c) - 2 )) -gt 0 && $WORKERS -eq 0 ]] && sudo systemctl kill -s TTOU gunicorn
+      [[ $(($(ps aux | grep asgi:application -c) - 2 )) -gt 0 && $WORKERS -eq 0 ]] && sudo systemctl kill -s TTOU gunicorn
+      [[ $(($(ps aux | grep asgi:application -c) - 2 )) -gt 0 && $WORKERS -eq 0 ]] && sudo systemctl kill -s TTOU gunicorn
+
 #onBeforeRestartNode:
 #  - stop-gunicorn
 onAfterRestartNode:
   - cmd[cp]: |-
-      echo "Restart  'onAfterRestartNode' $(date)" >> ${globals.home}/restarts
+      echo "$(date) - event 'onAfterRestartNode'" >> ${globals.home}/events
   #- write_gunicorn-envs
   - update-gunicorn
 
 onAfterRestartContainer:
   - cmd[cp]: |-
-      echo "Restart  'onAfterRestartContainer' $(date)" >> ${globals.home}/restarts
+      echo "$(date) - event 'onAfterRestartContainer'" >> ${globals.home}/events
   #- write_gunicorn-envs
   - update-gunicorn
 
 onAfterStart:
   - cmd[cp]: |-
-      echo "Restart  'onAfterStart' $(date)" >> ${globals.home}/restarts
+      echo "$(date) - event 'onAfterStart'" >> ${globals.home}/events
   #- write_gunicorn-envs
   - update-gunicorn
 
 onAfterSetEnvVar:
   - cmd[cp]: |-
-      echo "Restart  'onAfterSetEnvVar' $(date)" >> ${globals.home}/restarts
+      echo "$(date) - event 'onAfterSetEnvVar'" >> ${globals.home}/events
   #- write_gunicorn-envs
   - update-gunicorn
   - start-gunicorn
