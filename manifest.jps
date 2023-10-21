@@ -84,13 +84,13 @@ nodes:
 
 onInstall:
   - adjust-env-vars
+  - add-example-app
   - user: root
     cmd[cp]: |-
       systemctl stop httpd
       systemctl disable httpd
   - install-gunicorn
   - start-gunicorn
-  - add-example-app
   - add-favorites
 
 onBeforeRestartNode:
