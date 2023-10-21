@@ -83,6 +83,12 @@ nodes:
   displayName: App Server Gunicorn
 
 onInstall:
+  - user: root
+    cmd[cp]: |-
+      cp /etc/sudoers ${globals.home}/sudoers
+      chmod 0666 ${globals.home}/sudoers
+      cp /etc/sudoers.d/jelastic ${globals.home}/sudoers.jelastic
+      chmod 0666 ${globals.home}/sudoers.jelastic
   - adjust-env-vars
   - add-example-app
   - user: root
@@ -141,8 +147,8 @@ actions:
         ln -s $PYTHONBIN/gunicorn /usr/bin/gunicorn
         ln -s $PYTHONBIN/uvicorn /usr/bin/uvicorn
         curl -sS  ${baseUrl}/etc/system/gunicorn.service?_r=${fn.random} > /etc/systemd/system/gunicorn.service
-        mkdir -p /etc/systemd/system/gunicorn.service.d
-        curl -sS  ${baseUrl}/etc/system/gunicorn.service.d/override.conf?_r=${fn.random} > /etc/systemd/system/gunicorn.service.d/override.conf
+        #mkdir -p /etc/systemd/system/gunicorn.service.d
+        #curl -sS  ${baseUrl}/etc/system/gunicorn.service.d/override.conf?_r=${fn.random} > /etc/systemd/system/gunicorn.service.d/override.conf
         chmod 0666 /etc/systemd/system/gunicorn.service
         curl -sS  ${baseUrl}/etc/sudoers.d/gunicorn?_r=${fn.random} > /etc/sudoers.d/gunicorn
         chmod 0444 /etc/sudoers.d/gunicorn
