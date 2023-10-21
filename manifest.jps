@@ -116,10 +116,10 @@ actions:
   write_gunicorn-envs:
     - user: root
       cmd[cp]: |-
-        echo "WORKERS=$WORKERS" > /etc/httpd/conf/httpd.conf
-        echo "WORKER_CLASS=$WORKER_CLASS" >> /etc/httpd/conf/httpd.conf
-        echo "PORT=$PORT" >> /etc/httpd/conf/httpd.conf
-        echo "APP_MODULE=$APP_MODULE" >> /etc/httpd/conf/httpd.conf
+        echo "WORKERS=$WORKERS" > /etc/sysconf/gunicorn.conf
+        echo "WORKER_CLASS=$WORKER_CLASS" >> /etc/sysconf/gunicorn.conf
+        echo "PORT=$PORT" >> /etc/sysconf/gunicorn.conf
+        echo "APP_MODULE=$APP_MODULE" >> /etc/sysconf/gunicorn.conf
   add-favorites:
     api[cp]: env.file.AddFavorite
     path: ${globals.gunicorn_conf}
