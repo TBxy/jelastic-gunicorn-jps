@@ -66,6 +66,7 @@ settings:
     values:
       uvicorn.workers.UvicornWorker: uvicorn (asgi)
       sync: sync (wsgi)
+      gthread: gthread (wsgi)
     editable: false
   - type: spinner
     caption: Workers
@@ -75,6 +76,11 @@ settings:
     default: 3
     increment: 1
     tooltip: "Recommanded to have '2*cloudlets+1'."
+  - type: toggle
+    caption: "Preload App"
+    name: preload_app
+    default: true
+  - type: displayfield
   - type: toggle
     caption: "Full 'sudo' Access"
     name: sudo
@@ -131,9 +137,9 @@ onAfterSetEnvVar:
 
 actions:
   adjust-env-vars:
-    - if (settings.worker_class == 'sync'):
+    - if (settings.worker_class == 'sync' || settings.worker_class == 'gthread'):
         set:
-          app_module: "wsgi:app"
+          app_module: "wsgi:application"
     - else:
         set:
           app_module: "asgi:app"
@@ -143,8 +149,10 @@ actions:
         UVICORN_VERSION: ${settings.uvicorn_version}
         WORKER_CLASS: ${settings.worker_class}
         WORKERS: ${settings.workers}
+        PRELOAD_APP: ${settings.preload_app}
+        THREADS: 2
         GUNICORN_CONF: ${globals.gunicorn_conf}
-        APP_WORKDIR: ${this.app_workdir}
+        APP_WORKDIR: ${globals.app_workdir}
         PORT: 80
         APP_MODULE: ${this.app_module}
     - api[cp]: env.control.RemoveContainerEnvVars
