@@ -129,6 +129,7 @@ actions:
         echo "WORKER_CLASS=$WORKER_CLASS" >> /etc/sysconfig/gunicorn.conf
         echo "PORT=$PORT" >> /etc/sysconfig/gunicorn.conf
         echo "APP_MODULE=$APP_MODULE" >> /etc/sysconfig/gunicorn.conf
+        echo "GUNICORN_CONF=$GUNICORN_CONF" >> /etc/sysconfig/gunicorn.conf
   add-favorites:
     api[cp]: env.file.AddFavorite
     path: ${globals.gunicorn_conf}
@@ -142,13 +143,12 @@ actions:
     - write_gunicorn-envs
     - user: root
       cmd[cp]: |-
-        #echo "username ALL=(ALL) ALL" /etc/sudoers
         PYTHONBIN=$(dirname $(readlink -f $(which python)))
         ln -s $PYTHONBIN/gunicorn /usr/bin/gunicorn
         ln -s $PYTHONBIN/uvicorn /usr/bin/uvicorn
         curl -sS  ${baseUrl}/etc/system/gunicorn.service?_r=${fn.random} > /etc/systemd/system/gunicorn.service
-        #mkdir -p /etc/systemd/system/gunicorn.service.d
-        #curl -sS  ${baseUrl}/etc/system/gunicorn.service.d/override.conf?_r=${fn.random} > /etc/systemd/system/gunicorn.service.d/override.conf
+        mkdir -p /etc/systemd/system/gunicorn.service.d
+        curl -sS  ${baseUrl}/etc/system/gunicorn.service.d/override.conf?_r=${fn.random} > /etc/systemd/system/gunicorn.service.d/override.conf
         chmod 0666 /etc/systemd/system/gunicorn.service
         curl -sS  ${baseUrl}/etc/sudoers.d/gunicorn?_r=${fn.random} > /etc/sudoers.d/gunicorn
         chmod 0444 /etc/sudoers.d/gunicorn
