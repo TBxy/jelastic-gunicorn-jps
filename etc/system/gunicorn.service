@@ -5,17 +5,30 @@ After=network.target remote-fs.target nss-lookup.target
 
 [Service]
 Type=notify
+PermissionsStartOnly=true
 EnvironmentFile=/etc/sysconfig/gunicorn
-# the specific user that our service will run as
+# USER
 User=apache
 Group=apache
+
 RuntimeDirectory=gunicorn
 WorkingDirectory=/var/www/webroot/
-ExecStart=/usr/bin/gunicorn -c $GUNICORN_CONF --chdir $APP_WORKDIR $APP_MODULE
+# START
+ExecStartPre=/usr/local/sbin/pythonAutoConf.gunicorn.sh
+ExecStart=/usr/bin/gunicorn -c $GUNICORN_CONF $APP_MODULE
+ExecStartPost=/usr/local/sbin/pythonAutoConf.gunicorn.sh fixpermissions
+# Reload
+ExecReload=/usr/local/sbin/pythonAutoConf.gunicorn.sh
 ExecReload=/bin/kill -s HUP $MAINPID
 KillMode=mixed
+
+# error handling
 TimeoutStopSec=5
 PrivateTmp=true
+Restart=on-failure
+RestartSec=2s
+StartLimitBurst=6
+StartLimitInterval=240s
 
 [Install]
 WantedBy=multi-user.target

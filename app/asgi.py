@@ -21,4 +21,4 @@ class App:
         await send({"type": "http.response.body", "body": message})
 
 
-app = App
+application = App

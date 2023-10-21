@@ -88,15 +88,16 @@ settings:
   - type: spinner
     caption: Workers
     name: workers
-    min: 1
+    min: 0
     max: 20
-    default: 3
+    default: 0
     increment: 1
-    tooltip: "Recommanded to have '2*cloudlets+1'."
+    tooltip: "If set to '0' it scales automatically based on this formula '2*cloudlets+1'."
   - type: toggle
     caption: "Preload App"
     name: preload_app
     default: true
+    tooltip: "Preloads app for workers, reduces memory but restart is needed instead of reload"
   - type: displayfield
   - type: toggle
     caption: "Full 'sudo' Access"
@@ -159,7 +160,7 @@ actions:
           app_module: "wsgi:application"
     - else:
         set:
-          app_module: "asgi:app"
+          app_module: "asgi:application"
     - api[cp]: env.control.AddContainerEnvVars
       vars:
         GUNICORN_VERSION: ${settings.gunicorn_version}
@@ -199,6 +200,8 @@ actions:
         pip install --upgrade pip
         pip install gunicorn==${settings.gunicorn_version}
         pip install uvicorn==${settings.uvicorn_version}
+        pip install python-dotenv # used by gunicorn.conf.py
+        pip install pyinfo        # used by example deployement
     - user: root
       cmd[cp]: |-
         mkdir -p $(dirname ${globals.gunicorn_conf})
@@ -211,8 +214,8 @@ actions:
         ln -s $PYTHONBIN/gunicorn /usr/bin/gunicorn
         ln -s $PYTHONBIN/uvicorn /usr/bin/uvicorn
         curl -sS  ${baseUrl}/etc/system/gunicorn.service?_r=${fn.random} > /etc/systemd/system/gunicorn.service
-        mkdir -p /etc/systemd/system/gunicorn.service.d
-        curl -sS  ${baseUrl}/etc/system/gunicorn.service.d/override.conf?_r=${fn.random} > /etc/systemd/system/gunicorn.service.d/override.conf
+        #mkdir -p /etc/systemd/system/gunicorn.service.d
+        #curl -sS  ${baseUrl}/etc/system/gunicorn.service.d/override.conf?_r=${fn.random} > /etc/systemd/system/gunicorn.service.d/override.conf
         curl -sS  ${baseUrl}/etc/sudoers.d/gunicorn?_r=${fn.random} > /etc/sudoers.d/gunicorn
         chmod 0440 /etc/sudoers.d/gunicorn
         mkdir -p /var/log/gunicorn
@@ -220,9 +223,10 @@ actions:
         cp  /usr/local/sbin/pythonAutoConf /usr/local/sbin/pythonAutoConf.httpd.sh
         curl -sS  ${baseUrl}/scripts/pythonAutoConf.gunicorn.sh?_r=${fn.random} > /usr/local/sbin/pythonAutoConf.gunicorn.sh
         chmod +x /usr/local/sbin/pythonAutoConf.gunicorn.sh
+        touch /etc/sysconfig/gunicorn
         systemctl daemon-reload
-        systemctl enable gunicorn
         sed -i 's\SERVICE="httpd"\SERVICE="gunicorn"\' /var/lib/jelastic/overrides/envinfo.lib
+        systemctl enable gunicorn
   update-gunicorn:
     - log: "update gunicorn"
     - cmd[cp]: |-
