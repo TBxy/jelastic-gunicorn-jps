@@ -4,7 +4,7 @@ id: gunicorn
 baseUrl: https://raw.githubusercontent.com/TBxy/jelastic-gunicorn-jps/master
 logo: /images/gunicorn.png?_r=${fn.random}
 homepage: http://gunicorn.org
-name: Gunicorn
+name: "PythonApp-${fn.random}"
 
 globals:
   home: /var/www/webroot
@@ -80,6 +80,7 @@ nodes:
   nodeType: apache-python
   cloudlets: ${settings.dyn_cloudlets} 
   fixedCloudlets: ${settings.res_cloudlets} 
+  displayName: App Server Gunicorn
 
 onInstall:
   - adjust-env-vars
