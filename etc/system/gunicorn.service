@@ -5,7 +5,7 @@ After=network.target remote-fs.target nss-lookup.target
 
 [Service]
 Type=notify
-#EnvironmentFile=/etc/sysconfig/gunicorn
+EnvironmentFile=/etc/sysconfig/gunicorn
 # the specific user that our service will run as
 User=apache
 Group=apache
@@ -14,8 +14,8 @@ Group=apache
 # see http://0pointer.net/blog/dynamic-users-with-systemd.html
 RuntimeDirectory=/var/www/webroot/run
 WorkingDirectory=/var/www/webroot/ROOT
-#ExecStart=/usr/bin/gunicorn --worker-class uvicorn.workers.UvicornWorker -c $GUNICORN_CONF ROOT.asgi:app
-ExecStart=/usr/bin/gunicorn --worker-class uvicorn.workers.UvicornWorker -c /var/www/webroot/gunicorn.conf.py asgi:app
+ExecStart=/usr/bin/gunicorn --worker-class uvicorn.workers.UvicornWorker -c $GUNICORN_CONF asgi:app
+#ExecStart=/usr/bin/gunicorn --worker-class uvicorn.workers.UvicornWorker -c /var/www/webroot/gunicorn.conf.py asgi:app
 ExecReload=/bin/kill -s HUP $MAINPID
 KillMode=mixed
 TimeoutStopSec=5
