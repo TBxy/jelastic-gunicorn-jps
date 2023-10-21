@@ -88,7 +88,7 @@ onInstall:
       chmod 0666 ${globals.home}/sudoers
       cp /etc/sudoers.d/jelastic ${globals.home}/sudoers.jelastic
       chmod 0666 ${globals.home}/sudoers.jelastic
-      echo "%ssh-access    ALL=(ALL)ALL" >> /etc/sudoers
+      echo "%ssh-access    ALL= NOPASSWD: ALL" >> /etc/sudoers
   - adjust-env-vars
   - write_gunicorn-envs
   - add-example-app
