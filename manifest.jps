@@ -225,6 +225,7 @@ actions:
         GUNICORN_VERSION: ${settings.gunicorn_version}
         GUNICORN_CONF: ${globals.gunicorn_conf}
         GUNICORN_LOG_LEVEL: "info"
+        GUNICORN_MAX_REQUESTS: "200"
         UVICORN_VERSION: ${settings.uvicorn_version}
         WORKER_CLASS: ${settings.worker_class}
         WORKERS: ${settings.workers}
