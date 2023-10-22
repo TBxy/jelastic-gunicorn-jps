@@ -217,7 +217,8 @@ actions:
       cmd[cp]: |-
         systemctl stop httpd
         systemctl disable httpd
-        sed -i 's\SERVICE="httpd"\SERVICE="gunicorn"\' /var/lib/jelastic/overrides/envinfo.lib
+        sed -i 's\httpd\gunicorn\' /var/lib/jelastic/overrides/envinfo.lib
+        sed -i 's\httpd\gunicorn\' /var/lib/jelastic/overrides/deploy.lib
     - user: root
       cmd[cp]: |-
         mkdir -p $(dirname ${globals.gunicorn_conf})
