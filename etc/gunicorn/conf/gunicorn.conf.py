@@ -21,8 +21,8 @@ accesslog_var = os.getenv("GUNICORN_ACCESS_LOG", "/var/log/gunicorn/access_log")
 use_accesslog = accesslog_var or None
 errorlog_var = os.getenv("GUNICORN_ERROR_LOG", "/var/log/gunicorn/gunicorn.log")
 use_errorlog = errorlog_var or None
-graceful_timeout_str = os.getenv("GUNICORN_GRACEFUL_TIMEOUT", "120")
-timeout_str = os.getenv("GUNICORN_TIMEOUT", "120")
+graceful_timeout_str = os.getenv("GUNICORN_GRACEFUL_TIMEOUT", "30")
+timeout_str = os.getenv("GUNICORN_TIMEOUT", "30")
 keepalive_str = os.getenv("GUNICORN_KEEP_ALIVE", "5")
 
 # Gunicorn config variables
@@ -45,6 +45,8 @@ worker_class = os.getenv("WORKER_CLASS", "2")
 threads = 1
 if worker_class == "gthread":
     threads = int(os.getenv("THREADS", "2"))
+max_requests = int(os.getenv("GUNICORN_MAX_REQUESTS", "200"))
+max_requests_jitter = int(os.getenv("GUNICORN_MAX_REQUESTS_JITTER", "20"))
 
 # For debugging and testing
 log_data = {

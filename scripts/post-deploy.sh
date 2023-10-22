@@ -5,3 +5,4 @@ poetry install
 cd -
 
 sudo systemctl restart gunicorn
+#sudo systemctl reload gunicorn
