@@ -1,11 +1,11 @@
 import json
 import multiprocessing
 import os
-from dotenv import load_dotenv
 from pathlib import Path
+#from dotenv import load_dotenv
 
 # take env files from gunicorn env
-load_dotenv(dotenv_path=Path('/etc/sysconfig/gunicorn'))
+#load_dotenv(dotenv_path=Path('/etc/sysconfig/gunicorn'))
 
 host = os.getenv("APP_HOST", "0.0.0.0")
 port = os.getenv("APP_PORT", "80")

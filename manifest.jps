@@ -44,39 +44,39 @@ settings:
       text: Dynamic
       x: -5
   - type: displayfield
-  - type: compositefield
-    caption: Versions
-    defaultMargins:
-      top: 0
-      right: 10 
-      bottom: 0
-      left: 0
-    items:
-      - type: displayfield
-        markup: "Gunicorn"
-        margins: 5 11 0 0
-      - type: list
-        name: gunicorn_version
-        caption: Gunicorn Version
-        default: 21.2.0
-        values:
-          21.2.0: 21.2.0
-          21.0.0: 21.0.0
-          20.1.0: 20.1.0
-        editable: true
-        width: 100
-      - type: displayfield
-        markup: "Uvicorn"
-        margins: 5 11 0 0
-      - type: list
-        name: uvicorn_version
-        caption: Uvicorn Version
-        default: 0.23.2
-        values:
-          0.23.2: 0.23.2
-          0.22.0: 0.22.0
-        editable: true
-        width: 100
+  #- type: compositefield
+  #  caption: Versions
+  #  defaultMargins:
+  #    top: 0
+  #    right: 10 
+  #    bottom: 0
+  #    left: 0
+  #  items:
+  #    - type: displayfield
+  #      markup: "Gunicorn"
+  #      margins: 5 11 0 0
+  #    - type: list
+  #      name: gunicorn_version
+  #      caption: Gunicorn Version
+  #      default: 21.2.0
+  #      values:
+  #        21.2.0: 21.2.0
+  #        21.0.0: 21.0.0
+  #        20.1.0: 20.1.0
+  #      editable: true
+  #      width: 100
+  #    - type: displayfield
+  #      markup: "Uvicorn"
+  #      margins: 5 11 0 0
+  #    - type: list
+  #      name: uvicorn_version
+  #      caption: Uvicorn Version
+  #      default: 0.23.2
+  #      values:
+  #        0.23.2: 0.23.2
+  #        0.22.0: 0.22.0
+  #      editable: true
+  #      width: 100
   - type: list
     name: worker_class
     caption: Worker Class
@@ -150,8 +150,6 @@ onInstall:
   - if (settings.sudo):
     - add-sudo-all
   - adjust-env-vars
-  #- write_gunicorn-envs
-  - add-example-app
   - user: root
     cmd[cp]: |-
       systemctl stop httpd
@@ -162,10 +160,8 @@ onInstall:
   - cmd[cp]: |-
       curl -sS  ${baseUrl}/scripts/post-deploy.sh?_r=${fn.random} > ${globals.webroot}/post-deploy.sh
       chmod +x ${globals.webroot}/post-deploy.sh
-  - user: root
-    cmd[cp]: |-
-      echo "${globals.webroot}/post-deploy.sh" > /var/lib/jelastic/hooks/postDeploy_ROOT.sh
   - add-favorites
+  - add-example-app
   - install-extras
 
 # auto scaling if WORKERS_AUTO
@@ -180,40 +176,30 @@ onAfterSetCloudletCount:
       /usr/local/sbin/vertical-scaling "after" "${event.params.fixedCloudlets}" "${event.params.dynamicCloudlets}"
 
 #onBeforeRestartNode:
-#  - stop-gunicorn
 onAfterRestartNode:
   - cmd[cp]: |-
       echo "$(date) - event 'onAfterRestartNode'" >> ${globals.home}/events
-  #- write_gunicorn-envs
-  - update-gunicorn
 
 onAfterRestartContainer:
   - cmd[cp]: |-
       echo "$(date) - event 'onAfterRestartContainer'" >> ${globals.home}/events
-  #- write_gunicorn-envs
-  - update-gunicorn
 
 onAfterStart:
   - cmd[cp]: |-
       echo "$(date) - event 'onAfterStart'" >> ${globals.home}/events
-  #- write_gunicorn-envs
-  - update-gunicorn
 
 onAfterSetEnvVar:
   - cmd[cp]: |-
       echo "$(date) - event 'onAfterSetEnvVar'" >> ${globals.home}/events
-  #- write_gunicorn-envs
-  - update-gunicorn
-  - start-gunicorn
 
 actions:
   adjust-env-vars:
     - if (settings.worker_class == 'sync' || settings.worker_class == 'gthread'):
         set:
-          app_module: "wsgi:application"
+          app_module: "wsgi:app"
     - else:
         set:
-          app_module: "asgi:application"
+          app_module: "asgi:app"
     - api[cp]: env.control.AddContainerEnvVars
       vars:
         APP_MODULE: ${this.app_module}
@@ -222,7 +208,6 @@ actions:
         APP_PRELOAD: ${settings.preload_app}
         APP_RELOAD: false
         APP_PORT: 80
-        GUNICORN_VERSION: ${settings.gunicorn_version}
         GUNICORN_CONF: ${globals.gunicorn_conf}
         GUNICORN_LOG_LEVEL: "info"
         GUNICORN_MAX_REQUESTS: "200"
@@ -271,24 +256,16 @@ actions:
         /opt/poetry/bin/pip install -U pip setuptools
         /opt/poetry/bin/pip install poetry
         ln -s /opt/poetry/bin/poetry /usr/bin/poetry
+    - cmd[cp]: |-
         poetry config virtualenvs.in-project true
         python -m venv ${globals.app_venv}
   install-gunicorn:
     - log: "install gunicorn"
-    - cmd[cp]: |-
-        source ${globals.app_venv}/bin/activate
-        pip install gunicorn==${settings.gunicorn_version}
-        pip install uvicorn==${settings.uvicorn_version}
-        # used by gunicorn.conf.py
-        pip install python-dotenv
-        # used by example deployement
-        # pip install pyinfo
     - user: root
       cmd[cp]: |-
         mkdir -p $(dirname ${globals.gunicorn_conf})
         curl -sSf ${baseUrl}/etc/gunicorn/conf/gunicorn.conf.py?_r=${fn.random} > ${globals.gunicorn_conf}
         /usr/bin/setfacl -m g:ssh-access:wr  ${globals.gunicorn_conf} >&/dev/null;
-    ###- write_gunicorn-envs
     - user: root
       cmd[cp]: |-
         curl -sS  ${baseUrl}/etc/system/gunicorn.service?_r=${fn.random} > /etc/systemd/system/gunicorn.service
@@ -313,30 +290,26 @@ actions:
         systemctl daemon-reload
         sed -i 's\SERVICE="httpd"\SERVICE="gunicorn"\' /var/lib/jelastic/overrides/envinfo.lib
         systemctl enable gunicorn
-  update-gunicorn:
-    - log: "update gunicorn"
-    - cmd[cp]: |-
-        pip install --upgrade pip
-        pip install gunicorn==${GUNICORN_VERSION}
-        pip install uvicorn==${UVICORN_VERSION}
-        # restart with new binary
-    - user: root
-      cmd[cp]: |-
-        systemctl restart gunicorn
-        #systemctl kill -s USR2 gunicorn
   start-gunicorn:
     - log: "start gunicorn"
     - user: root
       cmd[cp]: |-
         systemctl start gunicorn
-  stop-gunicorn:
-    - log: "stop gunicorn"
+  add-example-app:
+    - deploy:
+        archive: https://github.com/TBxy/python-app/archive/refs/heads/master.zip
+        name: "Hello World"
+        context: "ROOT"
+    - cmd[cp]: |-
+        ./post-deploy.sh
+        #curl -sSf ${baseUrl}/app/asgi.py?_r=${fn.random} > ${globals.app_workdir}/asgi.py
     - user: root
       cmd[cp]: |-
-        systemctl stop gunicorn
-  add-example-app:
-    - cmd[cp]: |-
-        curl -sSf ${baseUrl}/app/asgi.py?_r=${fn.random} > ${globals.app_workdir}/asgi.py
+        echo "${globals.webroot}/post-deploy.sh" > /var/lib/jelastic/hooks/postDeploy_ROOT.sh
+    - addContext [cp]:
+        - name: ROOT
+          fileName: git@github.com:TBxy/python-app.git
+          type: GIT
   add-sudo-all:
     - log: "add ssh-access to sudoers"
     - user: root
