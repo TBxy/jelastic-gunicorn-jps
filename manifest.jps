@@ -156,13 +156,13 @@ onInstall:
       systemctl disable httpd
   - install-poetry
   - install-gunicorn
-  - start-gunicorn
   - cmd[cp]: |-
       curl -sS  ${baseUrl}/scripts/post-deploy.sh?_r=${fn.random} > ${globals.webroot}/post-deploy.sh
       chmod +x ${globals.webroot}/post-deploy.sh
   - add-favorites
   - add-example-app
   - install-extras
+  - start-gunicorn
 
 # auto scaling if WORKERS_AUTO
 onBeforeSetCloudletCount:
@@ -302,7 +302,6 @@ actions:
         context: "ROOT"
     - cmd[cp]: |-
         ./post-deploy.sh
-        #curl -sSf ${baseUrl}/app/asgi.py?_r=${fn.random} > ${globals.app_workdir}/asgi.py
     - user: root
       cmd[cp]: |-
         echo "${globals.webroot}/post-deploy.sh" > /var/lib/jelastic/hooks/postDeploy_ROOT.sh
