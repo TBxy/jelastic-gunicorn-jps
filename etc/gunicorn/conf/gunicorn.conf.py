@@ -7,33 +7,33 @@ from pathlib import Path
 # take env files from gunicorn env
 load_dotenv(dotenv_path=Path('/etc/sysconfig/gunicorn'))
 
-host = os.getenv("HOST", "0.0.0.0")
-port = os.getenv("PORT", "80")
+host = os.getenv("APP_HOST", "0.0.0.0")
+port = os.getenv("APP_PORT", "80")
 #port = "8000"
-bind_env = os.getenv("BIND", None)
-use_loglevel = os.getenv("LOG_LEVEL", "info")
+bind_env = os.getenv("APP_BIND", None)
+use_loglevel = os.getenv("GUNICORN_LOG_LEVEL", "info")
 if bind_env:
     use_bind = bind_env
 else:
     use_bind = f"{host}:{port}"
 
-accesslog_var = os.getenv("ACCESS_LOG", "-")
+accesslog_var = os.getenv("GUNICORN_ACCESS_LOG", "/var/log/gunicorn/access_log")
 use_accesslog = accesslog_var or None
-errorlog_var = os.getenv("ERROR_LOG", "-")
+errorlog_var = os.getenv("GUNICORN_ERROR_LOG", "/var/log/gunicorn/gunicorn.log")
 use_errorlog = errorlog_var or None
-graceful_timeout_str = os.getenv("GRACEFUL_TIMEOUT", "120")
-timeout_str = os.getenv("TIMEOUT", "120")
-keepalive_str = os.getenv("KEEP_ALIVE", "5")
+graceful_timeout_str = os.getenv("GUNICORN_GRACEFUL_TIMEOUT", "120")
+timeout_str = os.getenv("GUNICORN_TIMEOUT", "120")
+keepalive_str = os.getenv("GUNICORN_KEEP_ALIVE", "5")
 
 # Gunicorn config variables
 loglevel = use_loglevel
-max_workers = int(os.getenv("MAX_WORKERS", "20"))
+max_workers = int(os.getenv("WORKERS_MAX", "20"))
 workers = int(os.getenv("WORKERS", "2"))
 chdir = os.getenv("APP_WORKDIR", ".")
 if workers > max_workers:
     workers = max_workers
-preload_app = os.getenv("PRELOAD_APP", "0").lower() in ["1","y","yes","true","on"]
-reload = os.getenv("RELOAD_APP", "0").lower() in ["1","y","yes","true","on"]
+preload_app = os.getenv("APP_PRELOAD", "0").lower() in ["1","y","yes","true","on"]
+reload = os.getenv("APP_RELOAD", "0").lower() in ["1","y","yes","true","on"]
 bind = use_bind
 errorlog = use_errorlog
 worker_tmp_dir = "/dev/shm" # https://docs.gunicorn.org/en/latest/faq.html#blocking-os-fchmod
@@ -42,7 +42,7 @@ graceful_timeout = int(graceful_timeout_str)
 timeout = int(timeout_str)
 keepalive = int(keepalive_str)
 worker_class = os.getenv("WORKER_CLASS", "2")
-threads = 0
+threads = 1
 if worker_class == "gthread":
     threads = int(os.getenv("THREADS", "2"))
 

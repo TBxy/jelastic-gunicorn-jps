@@ -43,17 +43,17 @@ cat /.jelenv > /etc/sysconfig/gunicorn
 #    . /etc/sysconfig/gunicorn
 #fi
 
-[ -z "${APP_MODULE}" ] && export APP_MODULE="asgi:app"
+#[ -z "${APP_MODULE}" ] && export APP_MODULE="asgi:app"
 
-requirements_file="/var/www/webroot/ROOT/requirements.txt"
-pip_log="/var/log/httpd/pip.log"
+#requirements_file="/var/www/webroot/ROOT/requirements.txt"
+#pip_log="/var/log/httpd/pip.log"
 
 SED=$(which sed);
 GREP=$(which grep);
 RETVAL=0
 STOP_TIMEOUT=${STOP_TIMEOUT-10}
 RUN_DIR="/var/www/webroot/run";
-DEFAULT_GUNICORN_CONFIG="/etc/httpd/conf/httpd.conf";
+DEFAULT_GUNICORN_CONFIG="/etc/gunicorn/conf/gunicorn.conf.py";
 let "MAX_CLIENTS_MEM=$(free -m|grep "Mem"|awk '{print $2}') / 30"
 let "MAX_CLIENTS_CPU=$(grep -i "physical id" /proc/cpuinfo -c) * 5"
 [ ${MAX_CLIENTS_MEM} -lt ${MAX_CLIENTS_CPU} ] && MAX_CLIENTS=${MAX_CLIENTS_MEM} || MAX_CLIENTS=${MAX_CLIENTS_CPU}
@@ -78,6 +78,7 @@ fixSymlinks() {
     JELASTIC_PYTHON_BINARY_PATH=$(find /opt -name python 2>/dev/null|grep "jelastic-python[0-9]*/bin");
     [ -n "${JELASTIC_PYTHON_BINARY_PATH}" ] && JELASTIC_PYTHON_VERSION=$(${JELASTIC_PYTHON_BINARY_PATH} --version 2>&1|awk '{print $2}') || exit 0;
     CURRENT_PYTHON_VERSION=$(python -V 2>&1|awk '{print $2}');
+    PYTHONBIN=$(dirname $(readlink -f $(which python)))
     if [ "${CURRENT_PYTHON_VERSION}" != "${JELASTIC_PYTHON_VERSION}" ]; then
         version_index_short=$(awk -F "." '{ print $1$2}' <<< "$VERSION"); version_index=$(awk -F "." '{ print $1"."$2}' <<< "$VERSION"); major_version=$(awk -F "." '{ print $1}' <<< "$VERSION"); version=$VERSION; \
         [ -f /opt/jelastic-python${version_index_short}/bin/pip3 ] && ln -sfT /opt/jelastic-python${version_index_short}/bin/pip3 /opt/jelastic-python${version_index_short}/bin/pip; \
@@ -90,14 +91,12 @@ fixSymlinks() {
         ln -sfT /opt/jelastic-python${version_index_short}/bin/python${version_index}-config /opt/jelastic-python${version_index_short}/bin/python-config; \
         ln -sfT /opt/jelastic-python${version_index_short}/bin/python-config /usr/bin/python${version_index}-config; \
         ln -sfT /opt/jelastic-python${version_index_short}/bin/python-config /usr/bin/python${major_version}-config; \
-        ln -sfT /opt/jelastic-python${version_index_short}/bin/gunicorn /usr/bin/gunicorn; \
-        ln -sfT /opt/jelastic-python${version_index_short}/bin/uvicorn /usr/bin/uvicorn; \
     fi
 }
 
 applyOptimization(){
     fixSymlinks
-    [ -f ${requirements_file} ] && pip install -vvv --log ${pip_log} -r ${requirements_file} &>/dev/null;
+    # [ -f ${requirements_file} ] && pip install -vvv --log ${pip_log} -r ${requirements_file} &>/dev/null;
     if $GREP -q -o -P "Jelastic autoconfiguration mark"  $DEFAULT_GUNICORN_CONFIG
     then
         backupConfig $DEFAULT_GUNICORN_CONFIG;

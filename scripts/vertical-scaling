@@ -1,0 +1,26 @@
+#!/bin/bash
+# cmd <before|after> <reserve_cloudlets:int> <dynamic_cloudlets:int>
+
+event = "$1"
+reserved = "$2"
+dynamic = "$3"
+
+source /etc/sysconfig/gunicorn
+
+if [[ "$event" -eq "before" ]]; then
+    running=$(($(ps aux | grep $APP_MODULE -c) - 2 ))
+    exp_workers=$(($WORKERS + $dynamic * $WORKERS_ADD_AUTO))
+    echo "  current workers: running: $running, exp worker: $exp_workers" >> ${globals.home}/events
+    if [[ "$WORKERS_AUTO" == "true" ]]; then
+        while [[ $running -gt $exp_workers ]]; do
+          echo "    reduce worker: running: $running, exp worker: $exp_workers" >> ${globals.home}/events
+          sudo systemctl kill -s TTOU gunicorn
+          running=$(($running - 1 ))
+        done
+        while [[ $running -lt $exp_workers ]]; do
+          echo "    increase worker: running: $running, exp worker: $exp_workers" >> ${globals.home}/events
+          sudo systemctl kill -s TTIN gunicorn
+          running=$(($running + 1 ))
+        done
+    fi
+fi

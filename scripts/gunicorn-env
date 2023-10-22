@@ -1,0 +1,2 @@
+#!/bin/bash
+exec $APP_VENV/bin/gunicorn "$@"

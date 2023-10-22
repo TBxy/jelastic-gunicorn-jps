@@ -15,7 +15,7 @@ RuntimeDirectory=gunicorn
 WorkingDirectory=/var/www/webroot/
 # START
 ExecStartPre=/usr/local/sbin/pythonAutoConf.gunicorn.sh
-ExecStart=/usr/bin/gunicorn -c $GUNICORN_CONF $APP_MODULE
+ExecStart=/usr/local/sbin/gunicorn-env --config $GUNICORN_CONF $APP_MODULE
 ExecStartPost=/usr/local/sbin/pythonAutoConf.gunicorn.sh fixpermissions
 # Reload
 ExecReload=/usr/local/sbin/pythonAutoConf.gunicorn.sh
