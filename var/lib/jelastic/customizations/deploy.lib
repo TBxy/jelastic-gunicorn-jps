@@ -1,9 +1,10 @@
 #!/bin/bash
 
 DEPLOY_LOG="/var/log/gunicorn/deploy.log"
-PY_INSTALL_LOG="/var/log/gunicorn/pip_install.log"
+PY_INSTALL_LOG="/var/log/gunicorn/python_install.log"
 
 function installPythonPackages() {
+    echo "$(date) - Install Python package, prepare PostDeploy script ..." >> $DEPLOY_LOG;
     local context=$(basename $APPWEBROOT)
     local py_service="gunicorn"
     local pyproject_file=$(find $APPWEBROOT -name pyproject.toml | awk '{ print length($0) " " $0; }' | sort -r -n | cut -d ' ' -f 2- | tail -1)
@@ -14,12 +15,14 @@ function installPythonPackages() {
     echo "#!/bin/bash" > $post_deploy_script
     echo -e "\n# TODO: Check if 'APP_MODULE' variable is correct, current value: '$APP_MODULE' ($(date)).\n" >> $post_deploy_script
     if [[ $use_poetry -gt 0 ]]; then
+        echo "Use Poetry with '$pyproject_file'" >> $DEPLOY_LOG;
         echo -e "\n# poetry installation" >> $post_deploy_script
         echo "cd $(dirname $pyproject_file)" >> $post_deploy_script
         echo "poetry install --no-cache  &>> ${PY_INSTALL_LOG}" >> $post_deploy_script
         local dependency_file=$pyproject_file
     else
         if [[ -z "$requirements_file" ]]; then
+            echo "Use PIP with '$requirements_file'" >> $DEPLOY_LOG;
             echo -e "\n# pip installation" >> $post_deploy_script
             echo "cd $(dirname $requirements_file)" >> $post_deploy_script
             echo "python -m venv .venv" >> $post_deploy_script
@@ -28,7 +31,7 @@ function installPythonPackages() {
             echo "pip install --upgrade --no-cache-dir -r requirements.txt &>> ${PY_INSTALL_LOG}" >> $post_deploy_script
             local dependency_file=$requirements_file
         else
-            echo "Could not find python installation method (poetry or pip)!"  >&2
+            echo "Could not find any package management tool" >> $DEPLOY_LOG;
             echo "cd $APPWEBROOT" >> $post_deploy_script
             echo "python -m venv .venv" >> $post_deploy_script
             echo "source .venv/bin/activate" >> $post_deploy_script
@@ -56,6 +59,13 @@ function installPythonPackages() {
     if [[ ! -f  /var/lib/jelastic/hooks/postDeploy_$context.sh || $(cat /var/lib/jelastic/hooks/postDeploy_$context.sh) == "" ]]; then
         cp -f $post_deploy_script /var/lib/jelastic/hooks/postDeploy_$context.sh
         chmod +x /var/lib/jelastic/hooks/postDeploy_$context.sh 
+        echo "Post deploy script: '/var/lib/jelastic/hooks/postDeploy_$context.sh'" >> $DEPLOY_LOG;
+    else
+        echo "Did not update '/var/lib/jelastic/hooks/postDeploy_$context.sh'" >> $DEPLOY_LOG;
+        echo "  but ready to use deploy script available here ('$post_deploy_script'):" >> $DEPLOY_LOG;
+        echo "--" >> $DEPLOY_LOG;
+        echo $post_deploy_script >> $DEPLOY_LOG;
+        echo "--" >> $DEPLOY_LOG;
     fi
     chmod +x $post_deploy_script
 }
