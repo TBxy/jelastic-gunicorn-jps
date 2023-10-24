@@ -119,15 +119,12 @@ onInstall:
   - adjust-env-vars
   - install-poetry
   - install-gunicorn
-  - cmd[cp]: |-
-      curl -sS  ${baseUrl}/scripts/post-deploy.sh?_r=${fn.random} > ${globals.webroot}/post-deploy.sh
-      chmod +x ${globals.webroot}/post-deploy.sh
   - add-favorites
   - add-example-app
   - install-extras
-  - start-gunicorn
+  #- start-gunicorn
 
-# auto scaling if WORKERS_AUTO
+# auto scaling if GUNICORN_WORKERS_AUTO
 onBeforeSetCloudletCount:
   - cmd[cp]: |-
       echo "$(date) - event 'onBeforeSetCloudletCount': res:{$event.params.fixedCloudlets}, dyn:{$event.params.dynamicCloudlets}" >> ${globals.home}/events
@@ -174,12 +171,11 @@ actions:
         GUNICORN_CONF: ${globals.gunicorn_conf}
         GUNICORN_LOG_LEVEL: "info"
         GUNICORN_MAX_REQUESTS: "2000"
-        UVICORN_VERSION: ${settings.uvicorn_version}
-        WORKER_CLASS: ${settings.worker_class}
-        WORKERS: ${settings.workers}
-        WORKERS_MAX: ${settings.max_workers}
-        WORKERS_AUTO: ${settings.auto_workers}
-        WORKERS_ADD_AUTO: 2
+        GUNICORN_WORKER_CLASS: ${settings.worker_class}
+        GUNICORN_WORKERS: ${settings.workers}
+        GUNICORN_WORKERS_MAX: ${settings.max_workers}
+        GUNICORN_WORKERS_AUTO: ${settings.auto_workers}
+        GUNICORN_WORKERS_ADD_AUTO: 2
         THREADS: 1
     - api[cp]: env.control.RemoveContainerEnvVars
       vars: ["WSGI_SCRIPT", "MOD_WSGI_VERSION"]
@@ -219,11 +215,13 @@ actions:
         systemctl disable httpd
         sed -i 's\httpd\gunicorn\' /var/lib/jelastic/overrides/envinfo.lib
         sed -i 's\httpd\gunicorn\' /var/lib/jelastic/overrides/deploy.lib
+    - log: "copy gunicorn config"
     - user: root
       cmd[cp]: |-
         mkdir -p $(dirname ${globals.gunicorn_conf})
         curl -sSf ${baseUrl}/etc/gunicorn/conf/gunicorn.conf.py?_r=${fn.random} > ${globals.gunicorn_conf}
         /usr/bin/setfacl -m g:ssh-access:wr  ${globals.gunicorn_conf} >&/dev/null;
+    - log: "add gunicorn service"
     - user: root
       cmd[cp]: |-
         curl -sS  ${baseUrl}/etc/system/gunicorn.service?_r=${fn.random} > /etc/systemd/system/gunicorn.service
@@ -257,15 +255,13 @@ actions:
         archive: https://github.com/TBxy/python-app/archive/refs/heads/master.zip
         name: "Hello World"
         context: "ROOT"
-    - cmd[cp]: |-
-        ./post-deploy.sh
-    - user: root
-      cmd[cp]: |-
-        echo "${globals.webroot}/post-deploy.sh" > /var/lib/jelastic/hooks/postDeploy_ROOT.sh
-    - addContext [cp]:
-        - name: ROOT
-          fileName: git@github.com:TBxy/python-app.git
-          type: GIT
+    #- user: root
+    #  cmd[cp]: |-
+    #    echo "${globals.webroot}/post-deploy.sh" > /var/lib/jelastic/hooks/postDeploy_ROOT.sh
+    #- addContext [cp]:
+    #    - name: ROOT
+    #      fileName: git@github.com:TBxy/python-app.git
+    #      type: GIT
   add-sudo-all:
     - log: "add ssh-access to sudoers"
     - user: root

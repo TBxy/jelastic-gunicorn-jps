@@ -27,8 +27,8 @@ keepalive_str = os.getenv("GUNICORN_KEEP_ALIVE", "5")
 
 # Gunicorn config variables
 loglevel = use_loglevel
-max_workers = int(os.getenv("WORKERS_MAX", "20"))
-workers = int(os.getenv("WORKERS", "2"))
+max_workers = int(os.getenv("GUNICORN_WORKERS_MAX", "20"))
+workers = int(os.getenv("GUNICORN_WORKERS", "2"))
 chdir = os.getenv("APP_WORKDIR", ".")
 if workers > max_workers:
     workers = max_workers
@@ -41,7 +41,7 @@ accesslog = use_accesslog
 graceful_timeout = int(graceful_timeout_str)
 timeout = int(timeout_str)
 keepalive = int(keepalive_str)
-worker_class = os.getenv("WORKER_CLASS", "2")
+worker_class = os.getenv("GUNICORN_WORKER_CLASS", "2")
 threads = 1
 if worker_class == "gthread":
     threads = int(os.getenv("THREADS", "2"))

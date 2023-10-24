@@ -5,3 +5,11 @@ Manifest url:
 ```
 https://raw.githubusercontent.com/TBxy/jelastic-gunicorn-jps/master/manifest.jps
 ```
+
+## Additionals
+
+* https://docs.cloudscripting.com/
+* https://docs.jelastic.com/api/
+* https://github.com/jelastic/jem/tree/master
+* https://github.com/jelastic-jps
+
