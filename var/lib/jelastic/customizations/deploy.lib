@@ -41,7 +41,8 @@ function installPythonPackages() {
         echo -e "\n# gunicorn not in requirements '$check_file' file, install ..." >> $post_deploy_script
         echo ".venv/bin/pip install --upgrade --no-cache-dir gunicorn &>> ${PY_INSTALL_LOG}" >> $post_deploy_script
     fi
-    if [[ ($dependency_file == "do_install" || $(cat $check_file | grep uvicorn -c) -eq 0) && $WORKER_CLASS == "uvicorn.workers.UvicornWorker"]]; then
+    if [[ $dependency_file == "do_install" || $(cat $check_file | grep uvicorn -c) -eq 0 ]] && 
+           [[ $WORKER_CLASS == "uvicorn.workers.UvicornWorker" ]]; then
         echo -e "\n# uvicorn not in requirements '$check_file' file, install ..." >> $post_deploy_script
         echo ".venv/bin/pip install --upgrade --no-cache-dir uvicorn &>> ${PY_INSTALL_LOG}" >> $post_deploy_script
     fi
