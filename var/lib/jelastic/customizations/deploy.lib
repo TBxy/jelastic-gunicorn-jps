@@ -1,0 +1,90 @@
+#!/bin/bash
+
+DEPLOY_LOG="/var/log/gunicorn/deploy.log"
+PY_INSTALL_LOG="/var/log/gunicorn/pip_install.log"
+
+function installPythonPackages() {
+    local context=$(basename $APPWEBROOT)
+    local py_service="gunicorn"
+    local pyproject_file=$(find $APPWEBROOT -name pyproject.toml | awk '{ print length($0) " " $0; }' | sort -r -n | cut -d ' ' -f 2- | tail -1)
+    local requirements_file=$(find $APPWEBROOT -name requirements.txt | awk '{ print length($0) " " $0; }' | sort -r -n | cut -d ' ' -f 2- | tail -1)
+    local use_poetry=$(grep "^\[tool.poetry\]" -c $pyproject_file)
+    [[ $requirements_file == "" ]] && use_pip=0 || use_pip=1
+    local post_deploy_script="/var/lib/jelastic/hooks/postDeploy_$context.install.sh"
+    echo "#!/bin/bash" > $post_deploy_script
+    echo -e "\n# TODO: Check if 'APP_MODULE' variable is correct, current value: '$APP_MODULE' ($(date)).\n" >> $post_deploy_script
+    if [[ $use_poetry -gt 0 ]]; then
+        echo -e "\n# poetry installation" >> $post_deploy_script
+        echo "cd $(dirname $pyproject_file)" >> $post_deploy_script
+        echo "poetry install --no-cache  &>> ${PY_INSTALL_LOG}" >> $post_deploy_script
+        local dependency_file=$pyproject_file
+    else
+        if [[ -z "$requirements_file" ]]; then
+            echo -e "\n# pip installation" >> $post_deploy_script
+            echo "cd $(dirname $requirements_file)" >> $post_deploy_script
+            echo "python -m venv .venv" >> $post_deploy_script
+            echo "source .venv/bin/activate" >> $post_deploy_script
+            echo "pip install --upgrade --no-cache-dir pip &>> ${PY_INSTALL_LOG}" >> $post_deploy_script
+            echo "pip install --upgrade --no-cache-dir -r requirements.txt &>> ${PY_INSTALL_LOG}" >> $post_deploy_script
+            local dependency_file=$requirements_file
+        else
+            echo "Could not find python installation method (poetry or pip)!"  >&2
+            echo "cd $APPWEBROOT" >> $post_deploy_script
+            echo "python -m venv .venv" >> $post_deploy_script
+            echo "source .venv/bin/activate" >> $post_deploy_script
+            echo -e "\n# TODO: Add your own python installation script!\n" >> $post_deploy_script
+            local dependency_file="do_install"
+        fi
+        echo "deactivate" >> $post_deploy_script
+    fi
+    if [[ $dependency_file == "do_install" || $(cat $check_file | grep gunicorn -c) -eq 0 ]]; then
+        echo -e "\n# gunicorn not in requirements '$check_file' file, install ..." >> $post_deploy_script
+        echo ".venv/bin/pip install --upgrade --no-cache-dir gunicorn &>> ${PY_INSTALL_LOG}" >> $post_deploy_script
+    fi
+    if [[ ($dependency_file == "do_install" || $(cat $check_file | grep uvicorn -c) -eq 0) && $WORKER_CLASS == "uvicorn.workers.UvicornWorker"]]; then
+        echo -e "\n# uvicorn not in requirements '$check_file' file, install ..." >> $post_deploy_script
+        echo ".venv/bin/pip install --upgrade --no-cache-dir uvicorn &>> ${PY_INSTALL_LOG}" >> $post_deploy_script
+    fi
+    # change APP_VENV path
+    sed -n -i -e '/^APP_VENV=/!p' -e "\$aAPP_VENV=$(dirname $dependency_file)/.venv" /.jelenv
+
+    echo -e "\n\necho \"Installed packages:\" &>> $PY_INSTALL_LOG" >> $post_deploy_script;
+    echo -e ".venv/bin/pip list &>> ${PY_INSTALL_LOG}" >> $post_deploy_script;
+    echo -e "\n# reload $py_service service" >> $post_deploy_script
+    echo -e "sudo systemctl reload $py_service\n" >> $post_deploy_script
+    if [[ ! -f  /var/lib/jelastic/hooks/postDeploy_$context.sh || $(cat /var/lib/jelastic/hooks/postDeploy_$context.sh) == "" ]]; then
+        cp -f $post_deploy_script /var/lib/jelastic/hooks/postDeploy_$context.sh
+        chmod +x /var/lib/jelastic/hooks/postDeploy_$context.sh 
+    fi
+    chmod +x $post_deploy_script
+}
+
+function deploy(){
+    echo "--" >> $DEPLOY_LOG;
+    echo "$(date) - Starting deploying application ..." >> $DEPLOY_LOG;
+    package_url=$1;
+    context=$2;
+    ext=$3;
+    clearCache;
+    APPWEBROOT=${WEBROOT}/$context/;
+    getPackageName;
+    if [[ -f "${APPWEBROOT%/}" ]]
+    then
+        rm -f "${APPWEBROOT%/}";
+    fi
+    unpack $APPWEBROOT && echo "Application unpacked successfully!" >> $DEPLOY_LOG || \
+        { if [ "$context" != "ROOT" ];then 
+            rm -rf $APPWEBROOT 1>/dev/null 2>&1; 
+          fi; 
+          writeJSONResponseErr "result=>4071" "message=>Cannot unpack package!"; die -q; 
+        }
+    #shiftContentFromSubdirectory $APPWEBROOT;
+    finishDeploy;
+    echo "Finished deploying." >> $DEPLOY_LOG 2>&1;
+    if [ "$UID" != '0' ]; then
+        groups|grep -qw ssh-access && SUDO="sudo" || SUDO=""
+    else
+        SUDO=""
+    fi
+    ${SUDO} systemctl restart gunicorn &>/dev/null;
+}
