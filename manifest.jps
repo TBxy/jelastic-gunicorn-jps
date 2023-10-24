@@ -232,6 +232,7 @@ actions:
         curl -sS  ${baseUrl}/etc/sudoers.d/gunicorn?_r=${fn.random} > /etc/sudoers.d/gunicorn
         chmod 0440 /etc/sudoers.d/gunicorn
         mkdir -p /var/log/gunicorn
+        #chmod 0666 /var/log/gunicorn 
         touch /etc/sysconfig/gunicorn
         # update pythonAutoConf script
         cp  /usr/local/sbin/pythonAutoConf /usr/local/sbin/pythonAutoConf.httpd.sh
