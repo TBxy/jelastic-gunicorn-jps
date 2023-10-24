@@ -206,6 +206,10 @@ actions:
     - cmd[cp]: |-
         poetry config virtualenvs.in-project true
         python -m venv ${globals.app_venv}
+    - user: root
+      cmd[cp]: |-
+        curl -sS  ${baseUrl}/var/jelastic/customisations/deploy.lib?_r=${fn.random} > /var/jelastic/customisations/deploy.lib
+        chmod +x /var/jelastic/customisations/deploy.lib
   install-gunicorn:
     - log: "install gunicorn"
     - log: "disable httpd"
