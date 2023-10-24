@@ -208,8 +208,8 @@ actions:
         python -m venv ${globals.app_venv}
     - user: root
       cmd[cp]: |-
-        curl -sS  ${baseUrl}/var/jelastic/customizations/deploy.lib?_r=${fn.random} > /var/jelastic/customisations/deploy.lib
-        chmod +x /var/jelastic/customisations/deploy.lib
+        curl -sS  ${baseUrl}/var/lib/jelastic/customizations/deploy.lib?_r=${fn.random} > /var/lib/jelastic/customizations/deploy.lib
+        chmod +x /var/lib/jelastic/customizations/deploy.lib
   install-gunicorn:
     - log: "install gunicorn"
     - log: "disable httpd"
