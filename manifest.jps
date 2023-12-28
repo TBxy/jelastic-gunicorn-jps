@@ -49,9 +49,9 @@ settings:
     caption: Worker Class
     default: "uvicorn.workers.UvicornWorker"
     values:
-      gthread: gthread (wsgi)
       sync: sync (wsgi)
       uvicorn.workers.UvicornWorker: uvicorn (asgi)
+      gthread: gthread (wsgi)
     editable: false
     width: 200
   - type: compositefield
@@ -117,23 +117,23 @@ onInstall:
   - if (settings.sudo):
     - add-sudo-all
   - adjust-env-vars
+  - install-extras
   - install-poetry
   - install-gunicorn
   - add-favorites
   - add-example-app
-  - install-extras
   #- start-gunicorn
 
 # auto scaling if GUNICORN_WORKERS_AUTO
 onBeforeSetCloudletCount:
   - cmd[cp]: |-
       echo "$(date) - event 'onBeforeSetCloudletCount': res:{$event.params.fixedCloudlets}, dyn:{$event.params.dynamicCloudlets}" >> ${globals.home}/events
-      /usr/local/sbin/vertical-scaling "before" "${event.params.fixedCloudlets}" "${event.params.dynamicCloudlets}"
+  #/usr/local/sbin/vertical-scaling "before" "${event.params.fixedCloudlets}" "${event.params.dynamicCloudlets}"
 
 onAfterSetCloudletCount:
   - cmd[cp]: |-
       echo "$(date) - event 'onAfterSetCloudletCount': res:{$param.fixedCloudlets}, dyn:{$param.dynamicCloudlets}" >> ${globals.home}/events
-      /usr/local/sbin/vertical-scaling "after" "${event.params.fixedCloudlets}" "${event.params.dynamicCloudlets}"
+  #/usr/local/sbin/vertical-scaling "after" "${event.params.fixedCloudlets}" "${event.params.dynamicCloudlets}"
 
 #onBeforeRestartNode:
 onAfterRestartNode:
@@ -260,6 +260,11 @@ actions:
         archive: https://github.com/TBxy/python-app/archive/refs/heads/master.zip
         name: "Hello World"
         context: "ROOT"
+    - cmd[cp]: |-
+        cd $APP_WORKDIR
+        mv ./python-app-master/* .
+        rm -r ./python-app-master
+      
     #- user: root
     #  cmd[cp]: |-
     #    echo "${globals.webroot}/post-deploy.sh" > /var/lib/jelastic/hooks/postDeploy_ROOT.sh
