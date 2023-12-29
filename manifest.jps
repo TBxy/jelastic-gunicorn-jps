@@ -121,7 +121,7 @@ onInstall:
   - install-poetry
   - install-gunicorn
   - add-favorites
-  - add-example-app
+  # - add-example-app
   #- start-gunicorn
 
 # auto scaling if GUNICORN_WORKERS_AUTO
